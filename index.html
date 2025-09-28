@@ -2093,23 +2093,29 @@
             }
 
             async saveConfig() {
-                const url = document.getElementById('supabaseUrl').value.trim();
-                const key = document.getElementById('supabaseKey').value.trim();
+    const url = document.getElementById('supabaseUrl').value.trim();
+    const key = document.getElementById('supabaseKey').value.trim();
 
-                if (!url || !key) {
-                    alert('Por favor ingresa tanto la URL como la API Key de Supabase.');
-                    return;
-                }
+    if (!url || !key) {
+        alert('Por favor ingresa tanto la URL como la API Key de Supabase.');
+        return;
+    }
 
-                localStorage.setItem('supabaseUrl', url);
-                localStorage.setItem('supabaseKey', key);
-                
-                SUPABASE_CONFIG.url = url;
-                SUPABASE_CONFIG.key = key;
-                
-                await this.initializeSupabase();
-                this.showAlert('Configuración guardada correctamente.', 'success');
-            }
+    localStorage.setItem('supabaseUrl', url);
+    localStorage.setItem('supabaseKey', key);
+    
+    SUPABASE_CONFIG.url = url;
+    SUPABASE_CONFIG.key = key;
+    
+    await this.initializeSupabase();
+
+    if (this.isConnected) {
+        await this.loadMembersFromSupabase();   // 🔥 aquí forzamos la descarga
+    }
+
+    this.showAlert('Configuración guardada correctamente.', 'success');
+}
+
 
             async testConnection() {
                 const result = await this.testSupabaseConnection();
@@ -2188,4 +2194,5 @@
         });
     </script>
 </body>
+
 </html>
