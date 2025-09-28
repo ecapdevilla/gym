@@ -1,0 +1,2191 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GYM Pro - Sistema Completo</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://unpkg.com/feather-icons"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        :root {
+            --primary: #0f172a;
+            --secondary: #1e293b;
+            --accent: #f59e0b;
+            --success: #10b981;
+            --danger: #ef4444;
+            --info: #3b82f6;
+            --text: #f8fafc;
+            --text-muted: #94a3b8;
+            --border: #334155;
+            --card-bg: #1e293b;
+            --input-bg: #334155;
+            --highlight: #2d3e50;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--primary);
+            color: var(--text);
+            min-height: 100vh;
+            line-height: 1.6;
+        }
+
+        .app {
+            display: grid;
+            grid-template-columns: 280px 1fr;
+            min-height: 100vh;
+        }
+
+        @media (max-width: 768px) {
+            .app {
+                grid-template-columns: 1fr;
+            }
+
+            .sidebar {
+                position: fixed;
+                left: -280px;
+                top: 0;
+                transition: left 0.3s ease-in-out;
+                z-index: 100;
+                height: 100vh;
+                width: 280px;
+            }
+
+            .sidebar.open {
+                left: 0;
+            }
+
+            .mobile-header {
+                display: flex !important;
+                justify-content: space-between;
+                align-items: center;
+                padding: 1rem;
+                background: var(--secondary);
+                border-bottom: 1px solid var(--border);
+                position: sticky;
+                top: 0;
+                z-index: 99;
+            }
+
+            .overlay {
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0, 0, 0, 0.5);
+                z-index: 90;
+                display: none;
+            }
+
+            .overlay.visible {
+                display: block;
+            }
+        }
+
+        .sidebar {
+            background: var(--secondary);
+            padding: 2rem 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+            border-right: 1px solid var(--border);
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 2rem;
+        }
+
+        .logo {
+            font-size: 2rem;
+            font-weight: 800;
+            color: var(--accent);
+        }
+
+        .brand h1 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--text);
+        }
+
+        .nav {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .nav-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            padding: 0.8rem 1.2rem;
+            border-radius: 8px;
+            text-align: left;
+            font-size: 1rem;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .nav-btn:hover {
+            background: var(--highlight);
+            color: var(--text);
+        }
+
+        .nav-btn.active {
+            background: var(--highlight);
+            color: var(--accent);
+        }
+
+        .main {
+            padding: 2rem;
+            overflow-y: auto;
+            background: var(--primary);
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+
+        .mobile-header {
+            display: none;
+        }
+
+        .search-box {
+            position: relative;
+            flex-grow: 1;
+            margin-right: 1rem;
+        }
+
+        .search-box input {
+            width: 100%;
+            max-width: 400px;
+            background: var(--input-bg);
+            border: 1px solid var(--border);
+            padding: 0.7rem 0.7rem 0.7rem 2.5rem;
+            border-radius: 8px;
+            color: var(--text);
+            outline: none;
+            transition: border-color 0.2s ease;
+        }
+
+        .search-box input:focus {
+            border-color: var(--accent);
+        }
+
+        .search-box i {
+            position: absolute;
+            left: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-muted);
+        }
+
+        .user-info span {
+            font-weight: 600;
+            color: var(--text);
+        }
+
+        .view {
+            display: none;
+            animation: fadeIn 0.3s ease-in-out;
+        }
+
+        .view.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: var(--card-bg);
+            padding: 1.5rem;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            transition: transform 0.2s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-2px);
+        }
+
+        .stat-card h3 {
+            font-size: 1rem;
+            color: var(--text-muted);
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-number {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--accent);
+        }
+
+        .chart-section {
+            background: var(--card-bg);
+            padding: 1.5rem;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            margin-bottom: 2rem;
+        }
+
+        .chart-section h3 {
+            margin-bottom: 1rem;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 300px;
+            width: 100%;
+        }
+
+        .members-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .member-card {
+            background: var(--card-bg);
+            padding: 1.5rem;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            position: relative;
+            transition: transform 0.2s ease;
+        }
+
+        .member-card:hover {
+            transform: translateY(-2px);
+            border-color: var(--accent);
+        }
+
+        .member-card h4 {
+            font-size: 1.2rem;
+            margin-bottom: 0.5rem;
+            color: var(--text);
+        }
+
+        .member-card p {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            margin-bottom: 0.3rem;
+        }
+
+        .member-card .status {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            padding: 0.3rem 0.8rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        .status.active {
+            background: rgba(16, 185, 129, 0.2);
+            color: var(--success);
+        }
+
+        .status.expired {
+            background: rgba(239, 68, 68, 0.2);
+            color: var(--danger);
+        }
+
+        .status.warning {
+            background: rgba(245, 158, 11, 0.2);
+            color: var(--accent);
+        }
+
+        .member-card .actions {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.9rem;
+        }
+
+        .btn-primary {
+            background: var(--accent);
+            color: var(--primary);
+        }
+
+        .btn-primary:hover {
+            background: #eab308;
+            transform: translateY(-1px);
+        }
+
+        .btn-secondary {
+            background: var(--info);
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #2563eb;
+            transform: translateY(-1px);
+        }
+
+        .btn-success {
+            background: var(--success);
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #059669;
+            transform: translateY(-1px);
+        }
+
+        .btn-danger {
+            background: var(--danger);
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #dc2626;
+            transform: translateY(-1px);
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .section-header h2 {
+            color: var(--text);
+            font-size: 1.8rem;
+        }
+
+        .modal {
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0, 0, 0, 0.7);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(5px);
+            animation: fadeIn 0.3s ease;
+        }
+
+        .modal-content {
+            background: var(--secondary);
+            padding: 2rem;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 500px;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateY(-50px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .modal-header h3 {
+            font-size: 1.5rem;
+            color: var(--text);
+        }
+
+        .close {
+            color: var(--text-muted);
+            font-size: 2rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: color 0.2s ease;
+            line-height: 1;
+        }
+
+        .close:hover {
+            color: var(--text);
+        }
+
+        .form-group {
+            margin-bottom: 1.2rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            color: var(--text-muted);
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 0.7rem;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            background: var(--input-bg);
+            color: var(--text);
+            outline: none;
+            font-size: 1rem;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            border-color: var(--accent);
+        }
+
+        .form-group.checkbox {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .form-group.checkbox input {
+            width: auto;
+        }
+
+        .form-actions {
+            margin-top: 1.5rem;
+            text-align: right;
+            display: flex;
+            gap: 1rem;
+            justify-content: flex-end;
+        }
+
+        .attendance-control {
+            background: var(--card-bg);
+            padding: 2rem;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+        }
+
+        .quick-access {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1.5rem;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+        }
+
+        .quick-access input {
+            flex-grow: 1;
+            min-width: 200px;
+        }
+
+        .today-attendance {
+            border-top: 1px solid var(--border);
+            padding-top: 1.5rem;
+        }
+
+        .attendance-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .attendance-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem;
+            background: var(--highlight);
+            border-radius: 8px;
+            font-size: 0.9rem;
+        }
+
+        .attendance-item .time {
+            font-weight: 500;
+            color: var(--text-muted);
+        }
+
+        .routine-display {
+            background: var(--card-bg);
+            padding: 1.5rem;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            margin-top: 1rem;
+        }
+
+        .routine-display h3 {
+            margin-bottom: 1rem;
+            color: var(--text);
+        }
+
+        .routine-display ul {
+            list-style: none;
+            padding: 0;
+            margin: 1rem 0;
+        }
+
+        .routine-display li {
+            background: var(--highlight);
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 0.75rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.2s ease;
+        }
+
+        .routine-display li:hover {
+            background: var(--border);
+        }
+
+        .routine-display li.completed {
+            background: rgba(16, 185, 129, 0.2);
+            border: 1px solid var(--success);
+        }
+
+        .routine-display li.completed span {
+            text-decoration: line-through;
+            color: var(--success);
+        }
+
+        .routine-display .exercise-info {
+            flex-grow: 1;
+        }
+
+        .routine-display .exercise-info strong {
+            display: block;
+            font-size: 1rem;
+            margin-bottom: 0.2rem;
+        }
+
+        .routine-display .exercise-info span {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        .routine-display button {
+            background: none;
+            border: none;
+            color: var(--accent);
+            cursor: pointer;
+            padding: 0.5rem;
+            border-radius: 4px;
+            transition: background 0.2s ease;
+        }
+
+        .routine-display button:hover {
+            background: rgba(245, 158, 11, 0.1);
+        }
+
+        .config-section {
+            background: var(--card-bg);
+            padding: 2rem;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+        }
+
+        .price-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .price-category {
+            background: var(--highlight);
+            padding: 1.5rem;
+            border-radius: 8px;
+        }
+
+        .price-category h3 {
+            margin-bottom: 1rem;
+            color: var(--accent);
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 0.5rem;
+        }
+
+        .price-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            padding: 0.5rem 0;
+        }
+
+        .price-item label {
+            font-weight: 500;
+            color: var(--text-muted);
+        }
+
+        .price-item input {
+            width: 120px;
+            text-align: right;
+        }
+
+        .alert {
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .alert.success {
+            background: rgba(16, 185, 129, 0.2);
+            color: var(--success);
+            border: 1px solid var(--success);
+        }
+
+        .alert.danger {
+            background: rgba(239, 68, 68, 0.2);
+            color: var(--danger);
+            border: 1px solid var(--danger);
+        }
+
+        .alert.info {
+            background: rgba(59, 130, 246, 0.2);
+            color: var(--info);
+            border: 1px solid var(--info);
+        }
+
+        .placeholder-text {
+            color: var(--text-muted);
+            text-align: center;
+            padding: 2rem;
+            font-style: italic;
+        }
+
+        .members-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+            background: var(--card-bg);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .members-table th,
+        .members-table td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .members-table th {
+            background: var(--highlight);
+            color: var(--text-muted);
+            font-weight: 600;
+        }
+
+        .members-table tr:hover {
+            background: var(--highlight);
+        }
+
+        .badge {
+            padding: 0.3rem 0.6rem;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        .badge.success {
+            background: rgba(16, 185, 129, 0.2);
+            color: var(--success);
+        }
+
+        .badge.danger {
+            background: rgba(239, 68, 68, 0.2);
+            color: var(--danger);
+        }
+
+        .badge.warning {
+            background: rgba(245, 158, 11, 0.2);
+            color: var(--accent);
+        }
+
+        .connection-status {
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            margin-left: 1rem;
+        }
+
+        .connection-status.connected {
+            background: rgba(16, 185, 129, 0.2);
+            color: var(--success);
+        }
+
+        .connection-status.disconnected {
+            background: rgba(239, 68, 68, 0.2);
+            color: var(--danger);
+        }
+
+        @media (max-width: 768px) {
+            .main {
+                padding: 1rem;
+            }
+            
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .members-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .price-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .quick-access {
+                flex-direction: column;
+            }
+            
+            .section-header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="overlay" id="overlay"></div>
+    <div class="app">
+        <aside class="sidebar" id="sidebar">
+            <div class="brand">
+                <div class="logo">💪</div>
+                <h1>GYM Pro</h1>
+            </div>
+            <nav class="nav">
+                <button class="nav-btn active" data-view="dashboard">
+                    <i data-feather="bar-chart-2"></i> Dashboard
+                </button>
+                <button class="nav-btn" data-view="members">
+                    <i data-feather="users"></i> Miembros
+                </button>
+                <button class="nav-btn" data-view="attendance">
+                    <i data-feather="check-square"></i> Asistencias
+                </button>
+                <button class="nav-btn" data-view="routines">
+                    <i data-feather="activity"></i> Rutinas
+                </button>
+                <button class="nav-btn" data-view="config">
+                    <i data-feather="settings"></i> Configuración
+                </button>
+            </nav>
+        </aside>
+
+        <main class="main">
+            <header class="mobile-header">
+                <button id="mobileMenuBtn" class="btn">
+                    <i data-feather="menu"></i>
+                </button>
+                <div class="brand">
+                    <div class="logo">💪</div>
+                    <h1>GYM Pro</h1>
+                </div>
+            </header>
+            
+            <div class="header">
+                <div class="search-box">
+                    <i data-feather="search"></i>
+                    <input type="text" placeholder="Buscar miembro..." id="globalSearch">
+                </div>
+                <div class="user-info">
+                    <span>Administrador</span>
+                    <span class="connection-status disconnected" id="connectionStatus">Sin conexión</span>
+                </div>
+            </div>
+
+            <section id="dashboard" class="view active">
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <h3>Miembros Activos</h3>
+                        <div class="stat-number" id="activeMembers">0</div>
+                        <small>Total de membresías vigentes</small>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Ingresos del Mes</h3>
+                        <div class="stat-number" id="monthlyIncome">$0</div>
+                        <small>Ingresos totales del mes actual</small>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Asistencias Hoy</h3>
+                        <div class="stat-number" id="todayAttendance">0</div>
+                        <small>Registros de hoy</small>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Vencen Pronto</h3>
+                        <div class="stat-number" id="expiringSoon">0</div>
+                        <small>En los próximos 7 días</small>
+                    </div>
+                </div>
+
+                <div class="chart-section">
+                    <h3>Distribución de Membresías</h3>
+                    <div class="chart-container">
+                        <canvas id="membershipChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="chart-section">
+                    <h3>Asistencias de la Semana</h3>
+                    <div class="chart-container">
+                        <canvas id="attendanceChart"></canvas>
+                    </div>
+                </div>
+            </section>
+
+            <section id="members" class="view">
+                <div class="section-header">
+                    <h2>Gestión de Miembros</h2>
+                    <button class="btn btn-primary" id="addMemberBtn">
+                        <i data-feather="plus"></i> Nuevo Miembro
+                    </button>
+                </div>
+                
+                <div class="members-grid" id="membersList">
+                    <!-- Los miembros se cargarán aquí dinámicamente -->
+                </div>
+            </section>
+
+            <section id="attendance" class="view">
+                <div class="attendance-control">
+                    <h2>Control de Asistencias</h2>
+                    <div class="quick-access">
+                        <input type="text" id="memberSearch" placeholder="Buscar por nombre o ID...">
+                        <button class="btn btn-success" id="markAttendance">
+                            <i data-feather="check-circle"></i> Registrar Asistencia
+                        </button>
+                    </div>
+                    <h3>Asistencias de Hoy</h3>
+                    <div class="attendance-list" id="todayAttendanceList">
+                        <!-- Las asistencias de hoy se cargarán aquí -->
+                    </div>
+                </div>
+            </section>
+
+            <section id="routines" class="view">
+                <div class="section-header">
+                    <h2>Gestión de Rutinas</h2>
+                </div>
+                
+                <div class="routine-selector">
+                    <div class="form-group">
+                        <label>Seleccionar Miembro:</label>
+                        <select id="memberSelectRoutine">
+                            <option value="">-- Selecciona un miembro --</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="routine-display" id="routineDisplay">
+                    <p class="placeholder-text">Selecciona un miembro para ver y gestionar su rutina.</p>
+                </div>
+            </section>
+
+            <section id="config" class="view">
+                <div class="config-section">
+                    <h2>Configuración del Sistema</h2>
+                    
+                    <div class="form-group">
+                        <label for="supabaseUrl">Supabase URL:</label>
+                        <input type="text" id="supabaseUrl" placeholder="https://tu-proyecto.supabase.co">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="supabaseKey">Supabase API Key:</label>
+                        <input type="text" id="supabaseKey" placeholder="tu-api-key-publica">
+                    </div>
+                    
+                    <div class="form-actions">
+                        <button class="btn btn-success" id="testConnection">
+                            <i data-feather="wifi"></i> Probar Conexión
+                        </button>
+                        <button class="btn btn-primary" id="saveConfig">
+                            <i data-feather="save"></i> Guardar Configuración
+                        </button>
+                    </div>
+
+                    <div class="price-grid">
+                        <div class="price-category">
+                            <h3>Membresías Básicas</h3>
+                            <div class="price-item">
+                                <label>Día:</label>
+                                <input type="number" id="priceDay" value="15000" min="0">
+                            </div>
+                            <div class="price-item">
+                                <label>Semana:</label>
+                                <input type="number" id="priceWeek" value="60000" min="0">
+                            </div>
+                            <div class="price-item">
+                                <label>Quincena:</label>
+                                <input type="number" id="priceBiweek" value="100000" min="0">
+                            </div>
+                            <div class="price-item">
+                                <label>Mes:</label>
+                                <input type="number" id="priceMonth" value="180000" min="0">
+                            </div>
+                        </div>
+
+                        <div class="price-category">
+                            <h3>Con Instructor Personal</h3>
+                            <div class="price-item">
+                                <label>Día + Instructor:</label>
+                                <input type="number" id="priceDayInstructor" value="25000" min="0">
+                            </div>
+                            <div class="price-item">
+                                <label>Semana + Instructor:</label>
+                                <input type="number" id="priceWeekInstructor" value="100000" min="0">
+                            </div>
+                            <div class="price-item">
+                                <label>Quincena + Instructor:</label>
+                                <input type="number" id="priceBiweekInstructor" value="170000" min="0">
+                            </div>
+                            <div class="price-item">
+                                <label>Mes + Instructor:</label>
+                                <input type="number" id="priceMonthInstructor" value="300000" min="0">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-actions">
+                        <button class="btn btn-primary" id="savePrices">
+                            <i data-feather="save"></i> Guardar Precios
+                        </button>
+                        <button class="btn btn-danger" id="resetData">
+                            <i data-feather="refresh-cw"></i> Restablecer Datos
+                        </button>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Modal para agregar/editar miembros -->
+    <div id="memberModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modalTitle">Nuevo Miembro</h3>
+                <span class="close" id="closeModal">&times;</span>
+            </div>
+            <div class="modal-body">
+                <form id="memberForm">
+                    <input type="hidden" id="memberId">
+                    
+                    <div class="form-group">
+                        <label for="memberName">Nombre Completo *</label>
+                        <input type="text" id="memberName" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="memberDocument">Documento de Identidad *</label>
+                        <input type="text" id="memberDocument" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="memberPhone">Teléfono</label>
+                        <input type="tel" id="memberPhone">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="memberEmail">Email</label>
+                        <input type="email" id="memberEmail">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="memberBirthdate">Fecha de Nacimiento</label>
+                        <input type="date" id="memberBirthdate">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="membershipType">Tipo de Membresía *</label>
+                        <select id="membershipType" required>
+                            <option value="dia">Día</option>
+                            <option value="semana">Semana</option>
+                            <option value="quincena">Quincena</option>
+                            <option value="mes" selected>Mes</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group checkbox">
+                        <input type="checkbox" id="withInstructor">
+                        <label for="withInstructor">Incluir instructor personal</label>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="routineLevel">Nivel de Rutina *</label>
+                        <select id="routineLevel" required>
+                            <option value="principiante">Principiante</option>
+                            <option value="intermedio" selected>Intermedio</option>
+                            <option value="avanzado">Avanzado</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-actions">
+                        <button type="button" class="btn btn-secondary" id="cancelModal">Cancelar</button>
+                        <button type="submit" class="btn btn-primary">Guardar Miembro</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ===== CONFIGURACIÓN SUPABASE =====
+        const SUPABASE_CONFIG = {
+            url: localStorage.getItem('supabaseUrl') || '',
+            key: localStorage.getItem('supabaseKey') || ''
+        };
+
+        // ===== DATOS PREDEFINIDOS =====
+        const DEFAULT_ROUTINES = {
+            principiante: [
+                { ejercicio: "Cardio (cinta 20 min)", series: 1, repeticiones: "20 min", completado: false },
+                { ejercicio: "Press de pierna", series: 3, repeticiones: 12, completado: false },
+                { ejercicio: "Extensiones de cuadriceps", series: 3, repeticiones: 15, completado: false },
+                { ejercicio: "Curl de bíceps con barra", series: 3, repeticiones: 12, completado: false },
+                { ejercicio: "Press de pecho con mancuernas", series: 3, repeticiones: 10, completado: false },
+                { ejercicio: "Abdominales crunch", series: 3, repeticiones: 15, completado: false }
+            ],
+            intermedio: [
+                { ejercicio: "Press banca plano", series: 4, repeticiones: 10, completado: false },
+                { ejercicio: "Sentadillas con barra", series: 4, repeticiones: 12, completado: false },
+                { ejercicio: "Peso muerto rumano", series: 4, repeticiones: 10, completado: false },
+                { ejercicio: "Dominadas asistidas", series: 3, repeticiones: "max", completado: false },
+                { ejercicio: "Press militar", series: 4, repeticiones: 10, completado: false },
+                { ejercicio: "Curl femoral acostado", series: 3, repeticiones: 12, completado: false },
+                { ejercicio: "Elevaciones laterales", series: 3, repeticiones: 15, completado: false }
+            ],
+            avanzado: [
+                { ejercicio: "Peso muerto convencional", series: 5, repeticiones: 8, completado: false },
+                { ejercicio: "Sentadillas profundas", series: 5, repeticiones: 8, completado: false },
+                { ejercicio: "Press banca inclinado", series: 4, repeticiones: 8, completado: false },
+                { ejercicio: "Dominadas estrictas", series: 4, repeticiones: "max", completado: false },
+                { ejercicio: "Press militar con barra", series: 4, repeticiones: 8, completado: false },
+                { ejercicio: "Remo con barra T", series: 4, repeticiones: 10, completado: false },
+                { ejercicio: "Fondos en paralelas", series: 4, repeticiones: 12, completado: false },
+                { ejercicio: "Curl de bíceps concentrado", series: 3, repeticiones: 12, completado: false }
+            ]
+        };
+
+        const DEFAULT_PRICES = {
+            dia: 15000,
+            semana: 60000,
+            quincena: 100000,
+            mes: 180000,
+            dia_instructor: 25000,
+            semana_instructor: 100000,
+            quincena_instructor: 170000,
+            mes_instructor: 300000
+        };
+
+        // ===== CLASE PRINCIPAL DEL SISTEMA =====
+        class GymManager {
+            constructor() {
+                this.supabase = null;
+                this.myChart = null;
+                this.attendanceChart = null;
+                this.isConnected = false;
+                this.init();
+            }
+
+            async init() {
+                this.setupStorage();
+                this.setupEventListeners();
+                await this.initializeSupabase();
+                this.renderDashboard();
+                this.renderMembers();
+                this.renderAttendance();
+                this.renderRoutineSelector();
+                this.renderConfig();
+                feather.replace();
+                this.updateMembershipPrices();
+            }
+
+            setupStorage() {
+                // Configurar precios por defecto si no existen
+                if (!localStorage.getItem('gymPrices')) {
+                    localStorage.setItem('gymPrices', JSON.stringify(DEFAULT_PRICES));
+                }
+                
+                // Configurar miembros de ejemplo si no existen
+                if (!localStorage.getItem('gymMembers')) {
+                    const sampleMembers = [
+                        {
+                            id: 1,
+                            nombre: "Carlos Mendoza",
+                            documento_identidad: "12345678A",
+                            telefono: "3001112233",
+                            email: "carlos@email.com",
+                            fecha_nacimiento: "1990-05-15",
+                            fechaRegistro: new Date().toISOString().split('T')[0],
+                            membresia: {
+                                tipo: "mes",
+                                precio: 180000,
+                                fechaInicio: new Date().toISOString().split('T')[0],
+                                fechaVencimiento: this.calculateDueDate("mes", new Date()),
+                                instructor: false
+                            },
+                            rutina: JSON.parse(JSON.stringify(DEFAULT_ROUTINES.intermedio)),
+                            asistencias: [],
+                            activo: true
+                        },
+                        {
+                            id: 2,
+                            nombre: "Ana Rodríguez",
+                            documento_identidad: "87654321B",
+                            telefono: "3004445566",
+                            email: "ana@email.com",
+                            fecha_nacimiento: "1985-08-22",
+                            fechaRegistro: new Date().toISOString().split('T')[0],
+                            membresia: {
+                                tipo: "semana",
+                                precio: 60000,
+                                fechaInicio: new Date().toISOString().split('T')[0],
+                                fechaVencimiento: this.calculateDueDate("semana", new Date()),
+                                instructor: true
+                            },
+                            rutina: JSON.parse(JSON.stringify(DEFAULT_ROUTINES.principiante)),
+                            asistencias: [],
+                            activo: true
+                        }
+                    ];
+                    localStorage.setItem('gymMembers', JSON.stringify(sampleMembers));
+                }
+            }
+			async syncMembersFromSupabase() {
+    try {
+        const { data, error } = await this.supabase.from('clientes').select('*');
+        if (error) {
+            console.error("❌ Error cargando clientes:", error);
+            return;
+        }
+        this.members = data || [];
+        localStorage.setItem('members', JSON.stringify(this.members));
+        this.renderMembers();
+        console.log("✅ Miembros sincronizados con Supabase");
+    } catch (err) {
+        console.error("Error en syncMembersFromSupabase:", err);
+    }
+}
+
+            async initializeSupabase() {
+                if (SUPABASE_CONFIG.url && SUPABASE_CONFIG.key) {
+                    try {
+                        this.supabase = supabase.createClient(SUPABASE_CONFIG.url, SUPABASE_CONFIG.key);
+
+                        await this.testSupabaseConnection();
+                    } catch (error) {
+                        console.error('Error inicializando Supabase:', error);
+                        this.showAlert('Error de conexión con Supabase', 'danger');
+                    }
+                }
+            }
+
+            async testSupabaseConnection() {
+                if (!this.supabase) return false;
+                
+                try {
+                    const { data, error } = await this.supabase
+                        .from('ejercicios')
+                        .select('*')
+                        .limit(1);
+                    
+                    if (error) throw error;
+                    
+                    this.isConnected = true;
+                    this.updateConnectionStatus();
+                    return true;
+                } catch (error) {
+                    this.isConnected = false;
+                    this.updateConnectionStatus();
+                    return false;
+                }
+            }
+
+            updateConnectionStatus() {
+                const statusElement = document.getElementById('connectionStatus');
+                if (statusElement) {
+                    if (this.isConnected) {
+                        statusElement.textContent = 'Conectado';
+                        statusElement.className = 'connection-status connected';
+                    } else {
+                        statusElement.textContent = 'Sin conexión';
+                        statusElement.className = 'connection-status disconnected';
+                    }
+                }
+            }
+
+            setupEventListeners() {
+                // Navegación
+                document.querySelectorAll('.nav-btn').forEach(button => {
+                    button.addEventListener('click', this.handleNavClick.bind(this));
+                });
+
+                // Modal de miembros
+                document.getElementById('addMemberBtn').addEventListener('click', () => this.openMemberModal());
+                document.getElementById('memberForm').addEventListener('submit', this.saveMember.bind(this));
+                document.getElementById('closeModal').addEventListener('click', this.closeModal.bind(this));
+                document.getElementById('cancelModal').addEventListener('click', this.closeModal.bind(this));
+
+                // Asistencias
+                document.getElementById('markAttendance').addEventListener('click', this.markAttendance.bind(this));
+                document.getElementById('memberSearch').addEventListener('input', this.filterMembersForAttendance.bind(this));
+
+                // Búsqueda global
+                document.getElementById('globalSearch').addEventListener('input', this.filterMembers.bind(this));
+
+                // Configuración
+                document.getElementById('savePrices').addEventListener('click', this.savePrices.bind(this));
+                document.getElementById('resetData').addEventListener('click', this.resetData.bind(this));
+                document.getElementById('saveConfig').addEventListener('click', this.saveConfig.bind(this));
+                document.getElementById('testConnection').addEventListener('click', this.testConnection.bind(this));
+
+                // Rutinas
+                document.getElementById('memberSelectRoutine').addEventListener('change', this.renderRoutineForMember.bind(this));
+
+                // Menú móvil
+                document.getElementById('mobileMenuBtn').addEventListener('click', this.toggleSidebar.bind(this));
+                document.getElementById('overlay').addEventListener('click', this.toggleSidebar.bind(this));
+
+                // Cerrar modal al hacer clic fuera
+                window.addEventListener('click', (event) => {
+                    const modal = document.getElementById('memberModal');
+                    if (event.target === modal) {
+                        this.closeModal();
+                    }
+                });
+            }
+
+            toggleSidebar() {
+                document.getElementById('sidebar').classList.toggle('open');
+                document.getElementById('overlay').classList.toggle('visible');
+            }
+
+            handleNavClick(event) {
+                const view = event.currentTarget.dataset.view;
+                
+                // Actualizar botones activos
+                document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
+                event.currentTarget.classList.add('active');
+                
+                // Mostrar vista correspondiente
+                document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+                document.getElementById(view).classList.add('active');
+                
+                // Cerrar sidebar en móvil
+                if (window.innerWidth <= 768) {
+                    this.toggleSidebar();
+                }
+                
+                // Actualizar contenido según la vista
+                switch(view) {
+                    case 'members':
+                        this.renderMembers();
+                        break;
+                    case 'dashboard':
+                        this.renderDashboard();
+                        break;
+                    case 'attendance':
+                        this.renderAttendance();
+                        break;
+                    case 'routines':
+                        this.renderRoutineSelector();
+                        break;
+                    case 'config':
+                        this.renderConfig();
+                        break;
+                }
+            }
+
+            getData(key) {
+                return JSON.parse(localStorage.getItem(key)) || [];
+            }
+
+            setData(key, data) {
+                localStorage.setItem(key, JSON.stringify(data));
+            }
+
+            // ===== DASHBOARD =====
+            renderDashboard() {
+                const members = this.getData('gymMembers');
+                const today = new Date().toISOString().split('T')[0];
+                const currentMonth = new Date().getMonth();
+                const currentYear = new Date().getFullYear();
+
+                // Calcular métricas
+                const activeMembers = members.filter(m => new Date(m.membresia.fechaVencimiento) >= new Date()).length;
+                const monthlyIncome = members.reduce((sum, m) => {
+                    const memberDate = new Date(m.fechaRegistro);
+                    if (memberDate.getMonth() === currentMonth && memberDate.getFullYear() === currentYear) {
+                        return sum + m.membresia.precio;
+                    }
+                    return sum;
+                }, 0);
+                const todayAttendance = members.filter(m => m.asistencias.includes(today)).length;
+                const expiringSoon = members.filter(m => {
+                    const expirationDate = new Date(m.membresia.fechaVencimiento);
+                    const todayDate = new Date();
+                    const diffTime = expirationDate - todayDate;
+                    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                    return diffDays <= 7 && diffDays >= 0;
+                }).length;
+
+                // Actualizar UI
+                document.getElementById('activeMembers').innerText = activeMembers;
+                document.getElementById('monthlyIncome').innerText = `$${monthlyIncome.toLocaleString('es-CO')}`;
+                document.getElementById('todayAttendance').innerText = todayAttendance;
+                document.getElementById('expiringSoon').innerText = expiringSoon;
+
+                // Renderizar gráficos
+                this.renderMembershipChart(members);
+                this.renderAttendanceChart(members);
+            }
+
+            renderMembershipChart(members) {
+                const membershipCounts = {
+                    'Día': 0,
+                    'Semana': 0,
+                    'Quincena': 0,
+                    'Mes': 0,
+                    'Día + Instructor': 0,
+                    'Semana + Instructor': 0,
+                    'Quincena + Instructor': 0,
+                    'Mes + Instructor': 0
+                };
+
+                members.forEach(member => {
+                    const key = member.membresia.tipo.charAt(0).toUpperCase() + member.membresia.tipo.slice(1) + 
+                               (member.membresia.instructor ? ' + Instructor' : '');
+                    membershipCounts[key]++;
+                });
+
+                const ctx = document.getElementById('membershipChart').getContext('2d');
+                
+                if (this.myChart) {
+                    this.myChart.destroy();
+                }
+
+                this.myChart = new Chart(ctx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: Object.keys(membershipCounts).filter(key => membershipCounts[key] > 0),
+                        datasets: [{
+                            data: Object.values(membershipCounts).filter(val => val > 0),
+                            backgroundColor: [
+                                '#f59e0b', '#10b981', '#3b82f6', '#8b5cf6',
+                                '#f472b6', '#f97316', '#84cc16', '#06b6d4'
+                            ],
+                            borderWidth: 2,
+                            borderColor: '#0f172a'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'bottom',
+                                labels: {
+                                    color: '#f8fafc',
+                                    font: {
+                                        size: 12
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+
+            renderAttendanceChart(members) {
+                const last7Days = [];
+                for (let i = 6; i >= 0; i--) {
+                    const date = new Date();
+                    date.setDate(date.getDate() - i);
+                    last7Days.push(date.toISOString().split('T')[0]);
+                }
+
+                const attendanceData = last7Days.map(date => {
+                    return members.filter(m => m.asistencias.includes(date)).length;
+                });
+
+                const ctx = document.getElementById('attendanceChart').getContext('2d');
+                
+                if (this.attendanceChart) {
+                    this.attendanceChart.destroy();
+                }
+
+                this.attendanceChart = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: last7Days.map(date => {
+                            const d = new Date(date);
+                            return d.toLocaleDateString('es-ES', { weekday: 'short', day: 'numeric' });
+                        }),
+                        datasets: [{
+                            label: 'Asistencias',
+                            data: attendanceData,
+                            backgroundColor: 'rgba(59, 130, 246, 0.7)',
+                            borderColor: 'rgb(59, 130, 246)',
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: {
+                                    color: '#94a3b8'
+                                },
+                                grid: {
+                                    color: 'rgba(255, 255, 255, 0.1)'
+                                }
+                            },
+                            x: {
+                                ticks: {
+                                    color: '#94a3b8'
+                                },
+                                grid: {
+                                    color: 'rgba(255, 255, 255, 0.1)'
+                                }
+                            }
+                        },
+                        plugins: {
+                            legend: {
+                                labels: {
+                                    color: '#f8fafc'
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+
+            // ===== GESTIÓN DE MIEMBROS =====
+            renderMembers(searchQuery = '') {
+                const members = this.getData('gymMembers');
+                const container = document.getElementById('membersList');
+                const today = new Date();
+
+                container.innerHTML = '';
+
+                if (members.length === 0) {
+                    container.innerHTML = '<p class="placeholder-text">No hay miembros registrados.</p>';
+                    return;
+                }
+
+                const filteredMembers = members.filter(member =>
+                    member.nombre.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                    member.documento_identidad.toString().includes(searchQuery)
+                );
+
+                if (filteredMembers.length === 0) {
+                    container.innerHTML = '<p class="placeholder-text">No se encontraron miembros.</p>';
+                    return;
+                }
+
+                filteredMembers.forEach(member => {
+                    const expirationDate = new Date(member.membresia.fechaVencimiento);
+                    const isActive = expirationDate >= today;
+                    const diffTime = expirationDate - today;
+                    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                    
+                    let statusClass = 'active';
+                    let statusText = 'Activo';
+                    
+                    if (!isActive) {
+                        statusClass = 'expired';
+                        statusText = 'Vencido';
+                    } else if (diffDays <= 3) {
+                        statusClass = 'warning';
+                        statusText = 'Por vencer';
+                    }
+
+                    const card = document.createElement('div');
+                    card.className = 'member-card';
+                    card.innerHTML = `
+                        <span class="status ${statusClass}">${statusText}</span>
+                        <h4>${member.nombre}</h4>
+                        <p><strong>Documento:</strong> ${member.documento_identidad}</p>
+                        <p><strong>Teléfono:</strong> ${member.telefono || 'No registrado'}</p>
+                        <p><strong>Membresía:</strong> ${member.membresia.tipo} ${member.membresia.instructor ? '(Con instructor)' : ''}</p>
+                        <p><strong>Vencimiento:</strong> ${new Date(member.membresia.fechaVencimiento).toLocaleDateString('es-ES')}</p>
+                        <p><strong>Asistencias:</strong> ${member.asistencias.length} días</p>
+                        <div class="actions">
+                            <button class="btn btn-primary" onclick="gymManager.editMember(${member.id})">
+                                <i data-feather="edit"></i> Editar
+                            </button>
+                            <button class="btn btn-secondary" onclick="gymManager.viewRoutine(${member.id})">
+                                <i data-feather="activity"></i> Rutina
+                            </button>
+                            <button class="btn btn-danger" onclick="gymManager.deleteMember(${member.id})">
+                                <i data-feather="trash"></i> Eliminar
+                            </button>
+                        </div>
+                    `;
+                    container.appendChild(card);
+                });
+
+                feather.replace();
+            }
+
+            openMemberModal(member = null) {
+                const modal = document.getElementById('memberModal');
+                const form = document.getElementById('memberForm');
+                const title = document.getElementById('modalTitle');
+                
+                if (member) {
+                    title.innerText = 'Editar Miembro';
+                    document.getElementById('memberId').value = member.id;
+                    document.getElementById('memberName').value = member.nombre;
+                    document.getElementById('memberDocument').value = member.documento_identidad || '';
+                    document.getElementById('memberPhone').value = member.telefono || '';
+                    document.getElementById('memberEmail').value = member.email || '';
+                    document.getElementById('memberBirthdate').value = member.fecha_nacimiento || '';
+                    document.getElementById('membershipType').value = member.membresia.tipo;
+                    document.getElementById('withInstructor').checked = member.membresia.instructor;
+                    
+                    // Determinar nivel de rutina actual
+                    let routineLevel = 'intermedio';
+                    if (member.rutina.length === DEFAULT_ROUTINES.principiante.length) {
+                        routineLevel = 'principiante';
+                    } else if (member.rutina.length === DEFAULT_ROUTINES.avanzado.length) {
+                        routineLevel = 'avanzado';
+                    }
+                    document.getElementById('routineLevel').value = routineLevel;
+                } else {
+                    title.innerText = 'Nuevo Miembro';
+                    form.reset();
+                    document.getElementById('memberId').value = '';
+                    document.getElementById('routineLevel').value = 'intermedio';
+                }
+                
+                modal.style.display = 'flex';
+            }
+
+            closeModal() {
+                document.getElementById('memberModal').style.display = 'none';
+            }
+
+            async saveMember(event) {
+                event.preventDefault();
+                
+                const members = this.getData('gymMembers');
+                const prices = this.getData('gymPrices');
+                const id = document.getElementById('memberId').value;
+                const nombre = document.getElementById('memberName').value.trim();
+                const documento = document.getElementById('memberDocument').value.trim();
+                const telefono = document.getElementById('memberPhone').value.trim();
+                const email = document.getElementById('memberEmail').value.trim();
+                const fecha_nacimiento = document.getElementById('memberBirthdate').value;
+                const membresiaTipo = document.getElementById('membershipType').value;
+                const conInstructor = document.getElementById('withInstructor').checked;
+                const routineLevel = document.getElementById('routineLevel').value;
+
+                // Validaciones
+                if (!nombre) {
+                    alert('Por favor ingresa el nombre del miembro.');
+                    return;
+                }
+
+                if (!documento) {
+                    alert('Por favor ingresa el documento de identidad.');
+                    return;
+                }
+
+                // Verificar documento único
+                if (id) {
+                    const existingMember = members.find(m => m.documento_identidad === documento && m.id !== parseInt(id));
+                    if (existingMember) {
+                        alert('Ya existe un miembro con este documento de identidad.');
+                        return;
+                    }
+                } else {
+                    const existingMember = members.find(m => m.documento_identidad === documento);
+                    if (existingMember) {
+                        alert('Ya existe un miembro con este documento de identidad.');
+                        return;
+                    }
+                }
+
+                const priceKey = membresiaTipo + (conInstructor ? '_instructor' : '');
+                const precio = prices[priceKey] || 0;
+
+                const newMember = {
+                    id: id ? parseInt(id) : this.generateMemberId(members),
+                    nombre,
+                    documento_identidad: documento,
+                    telefono,
+                    email,
+                    fecha_nacimiento,
+                    fechaRegistro: id ? this.findMemberById(members, parseInt(id)).fechaRegistro : new Date().toISOString().split('T')[0],
+                    membresia: {
+                        tipo: membresiaTipo,
+                        precio,
+                        fechaInicio: id ? this.findMemberById(members, parseInt(id)).membresia.fechaInicio : new Date().toISOString().split('T')[0],
+                        fechaVencimiento: id ? 
+                            this.findMemberById(members, parseInt(id)).membresia.fechaVencimiento : 
+                            this.calculateDueDate(membresiaTipo, new Date()),
+                        instructor: conInstructor
+                    },
+                    rutina: id ? 
+                        this.findMemberById(members, parseInt(id)).rutina : 
+                        JSON.parse(JSON.stringify(DEFAULT_ROUTINES[routineLevel])),
+                    asistencias: id ? this.findMemberById(members, parseInt(id)).asistencias : [],
+                    activo: true
+                };
+
+                if (id) {
+                    // Editar miembro existente
+                    const memberIndex = members.findIndex(m => m.id === parseInt(id));
+                    if (memberIndex !== -1) {
+                        members[memberIndex] = newMember;
+                    }
+                } else {
+                    // Agregar nuevo miembro
+                    members.push(newMember);
+                }
+
+                this.setData('gymMembers', members);
+                
+                // Sincronizar con Supabase si está conectado
+                if (this.isConnected) {
+                    await this.syncMemberToSupabase(newMember);
+                }
+                
+                this.renderMembers();
+                this.renderDashboard();
+                this.renderRoutineSelector();
+                this.closeModal();
+                
+                this.showAlert('Miembro guardado correctamente.', 'success');
+            }
+
+            async syncMemberToSupabase(member) {
+                if (!this.supabase || !this.isConnected) return;
+                
+                try {
+                    const { error } = await this.supabase
+                        .from('clientes')
+                        .upsert({
+                            id: member.id,
+                            nombre: member.nombre,
+                            documento_identidad: member.documento_identidad,
+                            telefono: member.telefono,
+                            email: member.email,
+                            fecha_nacimiento: member.fecha_nacimiento,
+                            fecha_inscripcion: member.fechaRegistro,
+                            estado_membresia: member.activo,
+                            tipo_membresia: member.membresia.tipo,
+                            fecha_vencimiento: member.membresia.fechaVencimiento
+                        });
+                    await this.syncMembersFromSupabase();
+                    if (error) throw error;
+                } catch (error) {
+                    console.error('Error sincronizando con Supabase:', error);
+                }
+            }
+
+            generateMemberId(members) {
+                return members.length > 0 ? Math.max(...members.map(m => m.id)) + 1 : 1;
+            }
+
+            findMemberById(members, id) {
+                return members.find(m => m.id === id);
+            }
+
+            editMember(id) {
+                const members = this.getData('gymMembers');
+                const member = members.find(m => m.id === id);
+                if (member) {
+                    this.openMemberModal(member);
+                }
+            }
+
+            deleteMember(id) {
+                if (confirm('¿Estás seguro de que quieres eliminar a este miembro? Esta acción no se puede deshacer.')) {
+                    const members = this.getData('gymMembers');
+                    const updatedMembers = members.filter(m => m.id !== id);
+                    this.setData('gymMembers', updatedMembers);
+                    this.renderMembers();
+                    this.renderDashboard();
+                    this.renderRoutineSelector();
+                    
+                    this.showAlert('Miembro eliminado correctamente.', 'success');
+                }
+            }
+
+            viewRoutine(memberId) {
+                // Navegar a la sección de rutinas y seleccionar el miembro
+                document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
+                document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+                
+                document.querySelector('[data-view="routines"]').classList.add('active');
+                document.getElementById('routines').classList.add('active');
+                
+                document.getElementById('memberSelectRoutine').value = memberId;
+                this.renderRoutineForMember({ target: { value: memberId } });
+                
+                if (window.innerWidth <= 768) {
+                    this.toggleSidebar();
+                }
+            }
+
+            calculateDueDate(type, startDate) {
+                const date = new Date(startDate);
+                switch (type) {
+                    case 'dia':
+                        date.setDate(date.getDate() + 1);
+                        break;
+                    case 'semana':
+                        date.setDate(date.getDate() + 7);
+                        break;
+                    case 'quincena':
+                        date.setDate(date.getDate() + 15);
+                        break;
+                    case 'mes':
+                        date.setMonth(date.getMonth() + 1);
+                        break;
+                }
+                return date.toISOString().split('T')[0];
+            }
+
+            // ===== CONTROL DE ASISTENCIAS =====
+            renderAttendance(searchQuery = '') {
+                const members = this.getData('gymMembers');
+                const today = new Date().toISOString().split('T')[0];
+                const attendanceList = document.getElementById('todayAttendanceList');
+                
+                attendanceList.innerHTML = '';
+
+                const todayAttendees = members.filter(m => 
+                    m.asistencias.includes(today) && 
+                    m.nombre.toLowerCase().includes(searchQuery.toLowerCase())
+                );
+
+                if (todayAttendees.length === 0) {
+                    attendanceList.innerHTML = '<p class="placeholder-text">No hay asistencias registradas hoy.</p>';
+                    return;
+                }
+
+                todayAttendees.forEach(member => {
+                    const item = document.createElement('div');
+                    item.className = 'attendance-item';
+                    item.innerHTML = `
+                        <span>${member.nombre} (Documento: ${member.documento_identidad})</span>
+                        <span class="time">Hoy</span>
+                    `;
+                    attendanceList.appendChild(item);
+                });
+            }
+
+            filterMembersForAttendance(event) {
+                const query = event.target.value;
+                this.renderAttendance(query);
+            }
+
+           async markAttendance() {
+    const memberSearch = document.getElementById('memberSearch');
+    const query = memberSearch.value.trim();
+    const members = this.getData('gymMembers') || [];
+    const today = new Date().toISOString().split('T')[0];
+
+    if (!query) {
+        alert('Por favor ingresa el nombre o documento del miembro.');
+        return;
+    }
+
+    // Buscar miembro
+    const member = members.find(m => {
+        const nombreOk = m.nombre && m.nombre.toLowerCase() === query.toLowerCase();
+        const docOk = m.documento_identidad && String(m.documento_identidad) === query;
+        return nombreOk || docOk;
+    });
+
+    if (!member) {
+        console.warn("❌ Miembro no encontrado en lista local. Query:", query, "Miembros:", members);
+        alert('Miembro no encontrado. Verifica el nombre o documento.');
+        return;
+    }
+
+    // Verificar membresía activa
+    if (!member.membresia || !member.membresia.fechaVencimiento) {
+        console.warn("⚠️ Miembro sin membresía o sin fecha:", member);
+        alert(`El miembro ${member.nombre} no tiene membresía válida.`);
+        return;
+    }
+
+    const expirationDate = new Date(member.membresia.fechaVencimiento);
+    if (isNaN(expirationDate)) {
+        console.error("❌ Fecha de vencimiento inválida para:", member);
+        alert(`La fecha de membresía de ${member.nombre} no es válida.`);
+        return;
+    }
+
+    if (expirationDate < new Date()) {
+        alert(`La membresía de ${member.nombre} está vencida. No se puede registrar asistencia.`);
+        return;
+    }
+
+    // Verificar asistencias
+    if (!Array.isArray(member.asistencias)) {
+        member.asistencias = [];
+    }
+
+    if (member.asistencias.includes(today)) {
+        alert(`${member.nombre} ya registró su asistencia hoy.`);
+        return;
+    }
+
+    // Registrar asistencia
+    member.asistencias.push(today);
+    this.setData('gymMembers', members);
+
+    // Sincronizar con Supabase si está conectado
+    if (this.isConnected) {
+        try {
+            await this.syncAttendanceToSupabase(member.id, today);
+        } catch (err) {
+            console.error("❌ Error sincronizando asistencia:", err);
+        }
+    }
+
+    this.showAlert(`✅ Asistencia registrada para ${member.nombre}.`, 'success');
+    memberSearch.value = '';
+    this.renderAttendance();
+    this.renderDashboard();
+}
+
+
+            async syncAttendanceToSupabase(memberId, fecha) {
+                if (!this.supabase || !this.isConnected) return;
+                
+                try {
+                    const { error } = await this.supabase
+                        .from('asistencia')
+                        .insert({
+                            cliente_id: memberId,
+                            fecha_entrada: new Date().toISOString(),
+                            tipo_entrada: 'normal'
+                        });
+                    
+                    if (error) throw error;
+                } catch (error) {
+                    console.error('Error sincronizando asistencia con Supabase:', error);
+                }
+            }
+
+            // ===== SISTEMA DE RUTINAS =====
+            renderRoutineSelector() {
+                const members = this.getData('gymMembers');
+                const select = document.getElementById('memberSelectRoutine');
+                
+                select.innerHTML = '<option value="">-- Selecciona un miembro --</option>';
+                
+                members.forEach(member => {
+                    const option = document.createElement('option');
+                    option.value = member.id;
+                    option.textContent = `${member.nombre} (Documento: ${member.documento_identidad})`;
+                    select.appendChild(option);
+                });
+                
+                document.getElementById('routineDisplay').innerHTML = 
+                    '<p class="placeholder-text">Selecciona un miembro para ver y gestionar su rutina.</p>';
+            }
+
+            renderRoutineForMember(event) {
+                const memberId = event.target.value;
+                const container = document.getElementById('routineDisplay');
+                
+                if (!memberId) {
+                    container.innerHTML = '<p class="placeholder-text">Selecciona un miembro para ver y gestionar su rutina.</p>';
+                    return;
+                }
+
+                const members = this.getData('gymMembers');
+                const member = members.find(m => m.id === parseInt(memberId));
+                
+                if (!member) {
+                    container.innerHTML = '<p class="placeholder-text">Miembro no encontrado.</p>';
+                    return;
+                }
+
+                container.innerHTML = `
+                    <h3>Rutina de ${member.nombre}</h3>
+                    <p><strong>Nivel:</strong> ${this.getRoutineLevelName(member.rutina)}</p>
+                    <ul id="routineList"></ul>
+                    <div class="form-actions">
+                        <button class="btn btn-primary" onclick="gymManager.markAllExercises(${member.id})">
+                            <i data-feather="check-square"></i> Marcar todos como completados
+                        </button>
+                        <button class="btn btn-secondary" onclick="gymManager.resetRoutine(${member.id})">
+                            <i data-feather="refresh-cw"></i> Reiniciar rutina
+                        </button>
+                    </div>
+                `;
+
+                const list = document.getElementById('routineList');
+                member.rutina.forEach((exercise, index) => {
+                    const item = document.createElement('li');
+                    item.className = exercise.completado ? 'completed' : '';
+                    item.innerHTML = `
+                        <div class="exercise-info">
+                            <strong>${exercise.ejercicio}</strong>
+                            <span>Series: ${exercise.series} | Repeticiones: ${exercise.repeticiones}</span>
+                        </div>
+                        <button onclick="gymManager.toggleExerciseCompletion(${member.id}, ${index})">
+                            <i data-feather="${exercise.completado ? 'x-circle' : 'check-circle'}"></i>
+                            ${exercise.completado ? ' Desmarcar' : ' Completar'}
+                        </button>
+                    `;
+                    list.appendChild(item);
+                });
+
+                feather.replace();
+            }
+
+            getRoutineLevelName(routine) {
+                if (routine.length === DEFAULT_ROUTINES.principiante.length) return 'Principiante';
+                if (routine.length === DEFAULT_ROUTINES.intermedio.length) return 'Intermedio';
+                if (routine.length === DEFAULT_ROUTINES.avanzado.length) return 'Avanzado';
+                return 'Personalizado';
+            }
+
+            toggleExerciseCompletion(memberId, exerciseIndex) {
+                const members = this.getData('gymMembers');
+                const member = members.find(m => m.id === memberId);
+                
+                if (member && member.rutina[exerciseIndex]) {
+                    member.rutina[exerciseIndex].completado = !member.rutina[exerciseIndex].completado;
+                    this.setData('gymMembers', members);
+                    this.renderRoutineForMember({ target: { value: memberId } });
+                    
+                    const exercise = member.rutina[exerciseIndex];
+                    const action = exercise.completado ? 'completado' : 'pendiente';
+                    this.showAlert(`Ejercicio "${exercise.ejercicio}" marcado como ${action}.`, 'success');
+                }
+            }
+
+            markAllExercises(memberId) {
+                const members = this.getData('gymMembers');
+                const member = members.find(m => m.id === memberId);
+                
+                if (member) {
+                    member.rutina.forEach(exercise => {
+                        exercise.completado = true;
+                    });
+                    this.setData('gymMembers', members);
+                    this.renderRoutineForMember({ target: { value: memberId } });
+                    this.showAlert('Todos los ejercicios marcados como completados.', 'success');
+                }
+            }
+
+            resetRoutine(memberId) {
+                if (confirm('¿Estás seguro de que quieres reiniciar la rutina? Se perderán todos los progresos.')) {
+                    const members = this.getData('gymMembers');
+                    const member = members.find(m => m.id === memberId);
+                    
+                    if (member) {
+                        member.rutina.forEach(exercise => {
+                            exercise.completado = false;
+                        });
+                        this.setData('gymMembers', members);
+                        this.renderRoutineForMember({ target: { value: memberId } });
+                        this.showAlert('Rutina reiniciada correctamente.', 'success');
+                    }
+                }
+            }
+
+            // ===== CONFIGURACIÓN =====
+            renderConfig() {
+                const prices = this.getData('gymPrices') || DEFAULT_PRICES;
+                
+                // Actualizar valores de los inputs
+                document.getElementById('priceDay').value = prices.dia;
+                document.getElementById('priceWeek').value = prices.semana;
+                document.getElementById('priceBiweek').value = prices.quincena;
+                document.getElementById('priceMonth').value = prices.mes;
+                document.getElementById('priceDayInstructor').value = prices.dia_instructor;
+                document.getElementById('priceWeekInstructor').value = prices.semana_instructor;
+                document.getElementById('priceBiweekInstructor').value = prices.quincena_instructor;
+                document.getElementById('priceMonthInstructor').value = prices.mes_instructor;
+                
+                // Configuración de Supabase
+                document.getElementById('supabaseUrl').value = SUPABASE_CONFIG.url;
+                document.getElementById('supabaseKey').value = SUPABASE_CONFIG.key;
+            }
+
+            savePrices() {
+                const prices = {
+                    dia: parseInt(document.getElementById('priceDay').value) || 0,
+                    semana: parseInt(document.getElementById('priceWeek').value) || 0,
+                    quincena: parseInt(document.getElementById('priceBiweek').value) || 0,
+                    mes: parseInt(document.getElementById('priceMonth').value) || 0,
+                    dia_instructor: parseInt(document.getElementById('priceDayInstructor').value) || 0,
+                    semana_instructor: parseInt(document.getElementById('priceWeekInstructor').value) || 0,
+                    quincena_instructor: parseInt(document.getElementById('priceBiweekInstructor').value) || 0,
+                    mes_instructor: parseInt(document.getElementById('priceMonthInstructor').value) || 0
+                };
+
+                this.setData('gymPrices', prices);
+                this.updateMembershipPrices();
+                this.showAlert('Precios guardados correctamente.', 'success');
+            }
+
+            async saveConfig() {
+                const url = document.getElementById('supabaseUrl').value.trim();
+                const key = document.getElementById('supabaseKey').value.trim();
+
+                if (!url || !key) {
+                    alert('Por favor ingresa tanto la URL como la API Key de Supabase.');
+                    return;
+                }
+
+                localStorage.setItem('supabaseUrl', url);
+                localStorage.setItem('supabaseKey', key);
+                
+                SUPABASE_CONFIG.url = url;
+                SUPABASE_CONFIG.key = key;
+                
+                await this.initializeSupabase();
+                this.showAlert('Configuración guardada correctamente.', 'success');
+            }
+
+            async testConnection() {
+                const result = await this.testSupabaseConnection();
+                if (result) {
+                    this.showAlert('Conexión con Supabase exitosa.', 'success');
+                } else {
+                    this.showAlert('Error de conexión con Supabase. Verifica la configuración.', 'danger');
+                }
+            }
+
+            updateMembershipPrices() {
+                const prices = this.getData('gymPrices');
+                const membershipSelect = document.getElementById('membershipType');
+                
+                // Actualizar textos de las opciones con los nuevos precios
+                membershipSelect.innerHTML = `
+                    <option value="dia">Día ($${prices.dia.toLocaleString('es-CO')})</option>
+                    <option value="semana">Semana ($${prices.semana.toLocaleString('es-CO')})</option>
+                    <option value="quincena">Quincena ($${prices.quincena.toLocaleString('es-CO')})</option>
+                    <option value="mes" selected>Mes ($${prices.mes.toLocaleString('es-CO')})</option>
+                `;
+            }
+
+            resetData() {
+                if (confirm('¿Estás seguro de que quieres restablecer todos los datos? Se perderá toda la información actual.')) {
+                    localStorage.removeItem('gymMembers');
+                    localStorage.removeItem('gymPrices');
+                    this.init();
+                    this.showAlert('Datos restablecidos correctamente.', 'success');
+                }
+            }
+
+            // ===== BÚSQUEDA Y FILTROS =====
+            filterMembers(event) {
+                const query = event.target.value;
+                this.renderMembers(query);
+            }
+
+            // ===== UTILIDADES =====
+            showAlert(message, type = 'info') {
+                // Crear alerta temporal
+                const alert = document.createElement('div');
+                alert.className = `alert ${type}`;
+                alert.innerHTML = `
+                    <i data-feather="${type === 'success' ? 'check-circle' : type === 'danger' ? 'alert-circle' : 'info'}"></i>
+                    ${message}
+                `;
+                
+                document.querySelector('.main').insertBefore(alert, document.querySelector('.main').firstChild);
+                feather.replace();
+                
+                // Remover después de 3 segundos
+                setTimeout(() => {
+                    alert.remove();
+                }, 3000);
+            }
+
+            formatCurrency(amount) {
+                return new Intl.NumberFormat('es-CO', {
+                    style: 'currency',
+                    currency: 'COP',
+                    minimumFractionDigits: 0
+                }).format(amount);
+            }
+        }
+
+        // ===== INICIALIZACIÓN =====
+        const gymManager = new GymManager();
+
+        // Hacer el manager global para los eventos onclick
+        window.gymManager = gymManager;
+
+        // Inicializar Feather Icons cuando el DOM esté listo
+        document.addEventListener('DOMContentLoaded', () => {
+            feather.replace();
+        });
+    </script>
+</body>
+</html>
