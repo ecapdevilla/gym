@@ -1,0 +1,859 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Coaches - PowerGym</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="shared.js"></script>
+</head>
+<body class="bg-gray-100">
+    <!-- Navbar -->
+    <nav class="bg-blue-600 text-white p-4 shadow-lg">
+        <div class="container mx-auto flex justify-between items-center">
+            <div class="flex items-center space-x-4">
+                <a href="dashboard.html" class="text-white hover:text-blue-200">
+                    <i class="fas fa-arrow-left"></i>
+                </a>
+                <h1 class="text-xl font-bold">👨‍💼 Gestión de Coaches</h1>
+            </div>
+            <div class="flex items-center space-x-4">
+                <span id="userName" class="hidden md:block"></span>
+                <button onclick="logout()" class="bg-red-500 hover:bg-red-600 px-4 py-2 rounded-lg flex items-center">
+                    <i class="fas fa-sign-out-alt mr-2"></i>
+                    <span class="hidden md:inline">Salir</span>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Mobile Menu -->
+    <div class="bg-blue-500 text-white p-2 md:hidden">
+        <button onclick="goToDashboard()" class="w-full text-left">
+            <i class="fas fa-arrow-left mr-2"></i> Volver al Dashboard
+        </button>
+    </div>
+
+    <!-- Main Content -->
+    <div class="container mx-auto p-4">
+        <!-- Header Stats -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+            <div class="bg-white rounded-lg shadow p-4 text-center">
+                <div class="text-2xl font-bold text-blue-600" id="totalCoaches">0</div>
+                <div class="text-gray-600 text-sm">Total Coaches</div>
+            </div>
+            <div class="bg-white rounded-lg shadow p-4 text-center">
+                <div class="text-2xl font-bold text-green-600" id="activeCoaches">0</div>
+                <div class="text-gray-600 text-sm">Activos</div>
+            </div>
+            <div class="bg-white rounded-lg shadow p-4 text-center">
+                <div class="text-2xl font-bold text-purple-600" id="totalMembersAssigned">0</div>
+                <div class="text-gray-600 text-sm">Miembros Asignados</div>
+            </div>
+            <div class="bg-white rounded-lg shadow p-4 text-center">
+                <div class="text-2xl font-bold text-orange-600" id="avgMembersPerCoach">0</div>
+                <div class="text-gray-600 text-sm">Promedio por Coach</div>
+            </div>
+        </div>
+
+        <!-- Action Bar -->
+        <div class="bg-white rounded-lg shadow-lg p-4 mb-6">
+            <div class="flex flex-col md:flex-row md:items-center md:justify-between space-y-4 md:space-y-0">
+                <div class="flex-1">
+                    <div class="relative">
+                        <input type="text" id="searchInput" placeholder="Buscar coaches..." 
+                               class="w-full md:w-64 p-3 border border-gray-300 rounded-lg pl-10">
+                        <i class="fas fa-search absolute left-3 top-3 text-gray-400"></i>
+                    </div>
+                </div>
+                <div class="flex space-x-2">
+                    <button onclick="showAddCoachModal()" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center">
+                        <i class="fas fa-user-plus mr-2"></i> Nuevo Coach
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Coaches Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="coachesGrid">
+            <!-- Los coaches se cargarán aquí -->
+        </div>
+
+        <!-- Empty State -->
+        <div id="emptyState" class="text-center py-12 hidden">
+            <i class="fas fa-user-tie text-4xl text-gray-300 mb-4"></i>
+            <h3 class="text-lg font-medium text-gray-900">No hay coaches registrados</h3>
+            <p class="text-gray-500 mt-1">Comienza agregando tu primer coach.</p>
+            <button onclick="showAddCoachModal()" class="mt-4 bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-lg">
+                <i class="fas fa-user-plus mr-2"></i>Agregar Coach
+            </button>
+        </div>
+    </div>
+
+    <!-- Add Coach Modal -->
+    <div id="addCoachModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 hidden">
+        <div class="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <div class="p-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-xl font-bold" id="coachModalTitle">Agregar Nuevo Coach</h3>
+                    <button onclick="closeAddCoachModal()" class="text-gray-400 hover:text-gray-600">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+
+                <form id="coachForm" class="space-y-4">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Nombre *</label>
+                            <input type="text" id="coachName" required 
+                                   class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                   placeholder="Ej: Carlos">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Apellido *</label>
+                            <input type="text" id="coachLastName" required 
+                                   class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                   placeholder="Ej: Rodríguez">
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Teléfono *</label>
+                            <input type="tel" id="coachPhone" required 
+                                   class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                   placeholder="+57 300 123 4567">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Email *</label>
+                            <input type="email" id="coachEmail" required 
+                                   class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                   placeholder="coach@ejemplo.com">
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Especialidad Principal *</label>
+                            <select id="coachSpecialty" required 
+                                    class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                <option value="">Seleccionar especialidad...</option>
+                                <option value="fuerza">Entrenamiento de Fuerza</option>
+                                <option value="hipertrofia">Hipertrofia Muscular</option>
+                                <option value="cardio">Cardio y Pérdida de Peso</option>
+                                <option value="funcional">Entrenamiento Funcional</option>
+                                <option value="rehabilitacion">Rehabilitación</option>
+                                <option value="nutricion">Nutrición Deportiva</option>
+                                <option value="crossfit">CrossFit</option>
+                                <option value="yoga">Yoga y Pilates</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Años de Experiencia</label>
+                            <input type="number" id="coachExperience" min="0" max="50"
+                                   class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                   placeholder="3">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Certificaciones</label>
+                        <div id="certificationsContainer" class="space-y-2">
+                            <div class="flex items-center space-x-2">
+                                <input type="text" placeholder="Nueva certificación" 
+                                       class="flex-1 p-2 border border-gray-300 rounded-lg certification-input">
+                                <button type="button" onclick="addCertificationField()" class="bg-green-500 text-white p-2 rounded-lg">
+                                    <i class="fas fa-plus"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Horario de Trabajo</label>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-xs text-gray-600 mb-1">Hora de inicio</label>
+                                <input type="time" id="coachStartTime" 
+                                       class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                       value="06:00">
+                            </div>
+                            <div>
+                                <label class="block text-xs text-gray-600 mb-1">Hora de fin</label>
+                                <input type="time" id="coachEndTime" 
+                                       class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                       value="22:00">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Días de Trabajo</label>
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
+                            <label class="flex items-center space-x-2">
+                                <input type="checkbox" value="lunes" class="rounded text-blue-500 work-day" checked>
+                                <span class="text-sm">Lunes</span>
+                            </label>
+                            <label class="flex items-center space-x-2">
+                                <input type="checkbox" value="martes" class="rounded text-blue-500 work-day" checked>
+                                <span class="text-sm">Martes</span>
+                            </label>
+                            <label class="flex items-center space-x-2">
+                                <input type="checkbox" value="miercoles" class="rounded text-blue-500 work-day" checked>
+                                <span class="text-sm">Miércoles</span>
+                            </label>
+                            <label class="flex items-center space-x-2">
+                                <input type="checkbox" value="jueves" class="rounded text-blue-500 work-day" checked>
+                                <span class="text-sm">Jueves</span>
+                            </label>
+                            <label class="flex items-center space-x-2">
+                                <input type="checkbox" value="viernes" class="rounded text-blue-500 work-day" checked>
+                                <span class="text-sm">Viernes</span>
+                            </label>
+                            <label class="flex items-center space-x-2">
+                                <input type="checkbox" value="sabado" class="rounded text-blue-500 work-day">
+                                <span class="text-sm">Sábado</span>
+                            </label>
+                            <label class="flex items-center space-x-2">
+                                <input type="checkbox" value="domingo" class="rounded text-blue-500 work-day">
+                                <span class="text-sm">Domingo</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Notas/Observaciones</label>
+                        <textarea id="coachNotes" rows="3"
+                                  class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                  placeholder="Información adicional del coach..."></textarea>
+                    </div>
+
+                    <div class="flex items-center space-x-2">
+                        <input type="checkbox" id="coachActive" class="rounded text-blue-500" checked>
+                        <label for="coachActive" class="text-sm font-medium text-gray-700">Coach activo</label>
+                    </div>
+
+                    <div class="flex justify-end space-x-3 pt-4">
+                        <button type="button" onclick="closeAddCoachModal()" 
+                                class="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50">
+                            Cancelar
+                        </button>
+                        <button type="submit" class="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600">
+                            <span id="coachSubmitText">Guardar Coach</span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Coach Details Modal -->
+    <div id="coachDetailsModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 hidden">
+        <div class="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <div class="p-6">
+                <div class="flex justify-between items-center mb-6">
+                    <h3 class="text-xl font-bold" id="detailCoachName">Detalles del Coach</h3>
+                    <button onclick="closeCoachDetailsModal()" class="text-gray-400 hover:text-gray-600">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+
+                <div id="coachDetailsContent">
+                    <!-- Los detalles del coach se cargarán aquí -->
+                </div>
+
+                <div class="mt-6 flex space-x-3">
+                    <button onclick="closeCoachDetailsModal()" class="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50">
+                        Cerrar
+                    </button>
+                    <button id="editCoachBtn" class="flex-1 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600">
+                        Editar Coach
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Assign Members Modal -->
+    <div id="assignMembersModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 hidden">
+        <div class="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <div class="p-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-xl font-bold" id="assignModalTitle">Asignar Miembros al Coach</h3>
+                    <button onclick="closeAssignMembersModal()" class="text-gray-400 hover:text-gray-600">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+
+                <div class="mb-4">
+                    <input type="text" id="memberSearchAssign" placeholder="Buscar miembros..." 
+                           class="w-full p-3 border border-gray-300 rounded-lg" onkeyup="searchMembersForAssign()">
+                </div>
+
+                <div id="membersAssignList" class="space-y-2 max-h-96 overflow-y-auto mb-4">
+                    <!-- Los miembros para asignar se cargarán aquí -->
+                </div>
+
+                <div class="flex justify-end space-x-3 pt-4 border-t border-gray-200">
+                    <button onclick="closeAssignMembersModal()" class="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50">
+                        Cancelar
+                    </button>
+                    <button onclick="saveMemberAssignments()" class="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600">
+                        Guardar Asignaciones
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let editingCoachId = null;
+        let currentAssignCoachId = null;
+        let allCoaches = [];
+
+        function goToDashboard() {
+            window.location.href = 'dashboard.html';
+        }
+
+        function logout() {
+            AuthManager.logout();
+            window.location.href = 'index.html';
+        }
+
+        // Modal Functions
+        function showAddCoachModal() {
+            editingCoachId = null;
+            document.getElementById('coachModalTitle').textContent = 'Agregar Nuevo Coach';
+            document.getElementById('coachSubmitText').textContent = 'Guardar Coach';
+            document.getElementById('coachForm').reset();
+            document.getElementById('certificationsContainer').innerHTML = `
+                <div class="flex items-center space-x-2">
+                    <input type="text" placeholder="Nueva certificación" 
+                           class="flex-1 p-2 border border-gray-300 rounded-lg certification-input">
+                    <button type="button" onclick="addCertificationField()" class="bg-green-500 text-white p-2 rounded-lg">
+                        <i class="fas fa-plus"></i>
+                    </button>
+                </div>
+            `;
+            document.getElementById('coachActive').checked = true;
+            document.getElementById('addCoachModal').classList.remove('hidden');
+        }
+
+        function closeAddCoachModal() {
+            document.getElementById('addCoachModal').classList.add('hidden');
+            editingCoachId = null;
+        }
+
+        function showCoachDetails(coachId) {
+            const coach = allCoaches.find(c => c.id === coachId);
+            if (!coach) return;
+
+            document.getElementById('detailCoachName').textContent = `${coach.name} ${coach.last_name || ''}`;
+            
+            const members = LocalStorageDriver.getAll('members');
+            const assignedMembers = members.filter(m => m.coach_id === coachId);
+
+            document.getElementById('coachDetailsContent').innerHTML = `
+                <div class="space-y-6">
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="text-center p-3 bg-blue-50 rounded-lg">
+                            <div class="text-2xl font-bold text-blue-600">${assignedMembers.length}</div>
+                            <div class="text-sm text-gray-600">Miembros Asignados</div>
+                        </div>
+                        <div class="text-center p-3 bg-green-50 rounded-lg">
+                            <div class="text-2xl font-bold text-green-600">${coach.experience || 0}</div>
+                            <div class="text-sm text-gray-600">Años de Experiencia</div>
+                        </div>
+                    </div>
+
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Información Personal</label>
+                            <div class="mt-2 space-y-2 text-sm">
+                                <p><strong>Nombre:</strong> ${coach.name} ${coach.last_name || ''}</p>
+                                <p><strong>Teléfono:</strong> ${coach.phone}</p>
+                                <p><strong>Email:</strong> ${coach.email}</p>
+                                <p><strong>Especialidad:</strong> ${getSpecialtyText(coach.specialty)}</p>
+                                <p><strong>Experiencia:</strong> ${coach.experience || 0} años</p>
+                            </div>
+                        </div>
+
+                        ${coach.certifications && coach.certifications.length > 0 ? `
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Certificaciones</label>
+                            <ul class="mt-2 space-y-1">
+                                ${coach.certifications.map(cert => `
+                                    <li class="flex items-center text-sm">
+                                        <i class="fas fa-certificate text-yellow-500 mr-2"></i>
+                                        ${cert}
+                                    </li>
+                                `).join('')}
+                            </ul>
+                        </div>
+                        ` : ''}
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Horario de Trabajo</label>
+                            <div class="mt-2 space-y-2 text-sm">
+                                <p><strong>Horario:</strong> ${coach.start_time || '06:00'} - ${coach.end_time || '22:00'}</p>
+                                <p><strong>Días:</strong> ${getWorkDaysText(coach.work_days)}</p>
+                            </div>
+                        </div>
+
+                        ${assignedMembers.length > 0 ? `
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Miembros Asignados</label>
+                            <div class="space-y-2 max-h-48 overflow-y-auto">
+                                ${assignedMembers.map(member => `
+                                    <div class="flex items-center justify-between p-2 bg-gray-50 rounded">
+                                        <div class="flex items-center space-x-3">
+                                            <div class="bg-blue-100 text-blue-600 w-8 h-8 rounded-full flex items-center justify-center">
+                                                <i class="fas fa-user text-sm"></i>
+                                            </div>
+                                            <div>
+                                                <span class="font-medium">${member.name} ${member.last_name || ''}</span>
+                                                <p class="text-xs text-gray-500">${member.phone}</p>
+                                            </div>
+                                        </div>
+                                        <span class="px-2 py-1 bg-green-100 text-green-800 text-xs rounded">${member.plan_id || 'Sin plan'}</span>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                        ` : ''}
+
+                        ${coach.notes ? `
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Notas</label>
+                            <p class="mt-1 text-sm text-gray-600">${coach.notes}</p>
+                        </div>
+                        ` : ''}
+                    </div>
+                </div>
+            `;
+
+            document.getElementById('editCoachBtn').onclick = () => {
+                closeCoachDetailsModal();
+                editCoach(coachId);
+            };
+
+            document.getElementById('coachDetailsModal').classList.remove('hidden');
+        }
+
+        function closeCoachDetailsModal() {
+            document.getElementById('coachDetailsModal').classList.add('hidden');
+        }
+
+        function showAssignMembersModal(coachId) {
+            currentAssignCoachId = coachId;
+            const coach = allCoaches.find(c => c.id === coachId);
+            if (!coach) return;
+
+            document.getElementById('assignModalTitle').textContent = `Asignar Miembros a ${coach.name}`;
+            loadMembersForAssignment();
+            document.getElementById('assignMembersModal').classList.remove('hidden');
+        }
+
+        function closeAssignMembersModal() {
+            document.getElementById('assignMembersModal').classList.add('hidden');
+            currentAssignCoachId = null;
+        }
+
+        // Certification Management
+        function addCertificationField(value = '') {
+            const container = document.getElementById('certificationsContainer');
+            const certDiv = document.createElement('div');
+            certDiv.className = 'flex items-center space-x-2';
+            certDiv.innerHTML = `
+                <input type="text" value="${value}" placeholder="Certificación" 
+                       class="flex-1 p-2 border border-gray-300 rounded-lg certification-input">
+                <button type="button" onclick="removeCertificationField(this)" class="bg-red-500 text-white p-2 rounded-lg">
+                    <i class="fas fa-times"></i>
+                </button>
+            `;
+            container.appendChild(certDiv);
+        }
+
+        function removeCertificationField(button) {
+            const container = document.getElementById('certificationsContainer');
+            if (container.children.length > 1) {
+                button.parentElement.remove();
+            }
+        }
+
+        function getCertifications() {
+            const inputs = document.querySelectorAll('.certification-input');
+            const certifications = Array.from(inputs)
+                .map(input => input.value.trim())
+                .filter(value => value !== '');
+            return certifications;
+        }
+
+        function getWorkDays() {
+            const checkboxes = document.querySelectorAll('.work-day:checked');
+            return Array.from(checkboxes).map(cb => cb.value);
+        }
+
+        // Member Assignment Functions
+        function loadMembersForAssignment() {
+            const members = LocalStorageDriver.getAll('members').filter(m => m.status === 'active');
+            const container = document.getElementById('membersAssignList');
+            
+            container.innerHTML = members.map(member => {
+                const isAssigned = member.coach_id === currentAssignCoachId;
+                return `
+                    <div class="flex items-center justify-between p-3 border border-gray-200 rounded-lg hover:bg-gray-50">
+                        <div class="flex items-center space-x-3">
+                            <input type="checkbox" id="assign_member_${member.id}" 
+                                   ${isAssigned ? 'checked' : ''} 
+                                   class="rounded text-blue-500 member-assign-checkbox">
+                            <div class="bg-blue-100 text-blue-600 w-10 h-10 rounded-full flex items-center justify-center">
+                                <i class="fas fa-user"></i>
+                            </div>
+                            <div>
+                                <h4 class="font-medium">${member.name} ${member.last_name || ''}</h4>
+                                <p class="text-sm text-gray-600">${member.phone} • ${member.plan_id || 'Sin plan'}</p>
+                            </div>
+                        </div>
+                        ${member.coach_id && member.coach_id !== currentAssignCoachId ? `
+                            <span class="px-2 py-1 bg-yellow-100 text-yellow-800 text-xs rounded">
+                                Asignado a otro coach
+                            </span>
+                        ` : ''}
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function searchMembersForAssign() {
+            const searchTerm = document.getElementById('memberSearchAssign').value.toLowerCase();
+            const members = LocalStorageDriver.getAll('members').filter(m => m.status === 'active');
+            const container = document.getElementById('membersAssignList');
+            
+            const filteredMembers = members.filter(member => 
+                member.name.toLowerCase().includes(searchTerm) ||
+                (member.last_name && member.last_name.toLowerCase().includes(searchTerm)) ||
+                member.phone.includes(searchTerm)
+            );
+
+            container.innerHTML = filteredMembers.map(member => {
+                const isAssigned = member.coach_id === currentAssignCoachId;
+                return `
+                    <div class="flex items-center justify-between p-3 border border-gray-200 rounded-lg hover:bg-gray-50">
+                        <div class="flex items-center space-x-3">
+                            <input type="checkbox" id="assign_member_${member.id}" 
+                                   ${isAssigned ? 'checked' : ''} 
+                                   class="rounded text-blue-500 member-assign-checkbox">
+                            <div class="bg-blue-100 text-blue-600 w-10 h-10 rounded-full flex items-center justify-center">
+                                <i class="fas fa-user"></i>
+                            </div>
+                            <div>
+                                <h4 class="font-medium">${member.name} ${member.last_name || ''}</h4>
+                                <p class="text-sm text-gray-600">${member.phone} • ${member.plan_id || 'Sin plan'}</p>
+                            </div>
+                        </div>
+                        ${member.coach_id && member.coach_id !== currentAssignCoachId ? `
+                            <span class="px-2 py-1 bg-yellow-100 text-yellow-800 text-xs rounded">
+                                Asignado a otro coach
+                            </span>
+                        ` : ''}
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function saveMemberAssignments() {
+            if (!currentAssignCoachId) return;
+
+            const checkboxes = document.querySelectorAll('.member-assign-checkbox:checked');
+            const assignedMemberIds = Array.from(checkboxes).map(cb => {
+                const id = cb.id.replace('assign_member_', '');
+                return id;
+            });
+
+            // Actualizar miembros
+            const members = LocalStorageDriver.getAll('members');
+            members.forEach(member => {
+                if (assignedMemberIds.includes(member.id)) {
+                    // Asignar a este coach
+                    if (member.coach_id !== currentAssignCoachId) {
+                        LocalStorageDriver.update('members', member.id, { coach_id: currentAssignCoachId });
+                    }
+                } else if (member.coach_id === currentAssignCoachId) {
+                    // Remover asignación
+                    LocalStorageDriver.update('members', member.id, { coach_id: null });
+                }
+            });
+
+            Utilities.showToast('Asignaciones guardadas exitosamente');
+            closeAssignMembersModal();
+            loadCoachesData();
+        }
+
+        // Data Loading
+        function loadCoachesData() {
+            const user = AuthManager.getCurrentUser();
+            if (!user) {
+                window.location.href = 'index.html';
+                return;
+            }
+
+            document.getElementById('userName').textContent = `${user.name} ${user.last_name || ''}`;
+            loadCoaches();
+            loadStats();
+        }
+
+        function loadCoaches() {
+            allCoaches = LocalStorageDriver.getAll('coaches');
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            
+            let filteredCoaches = allCoaches;
+            if (searchTerm) {
+                filteredCoaches = allCoaches.filter(coach => 
+                    coach.name.toLowerCase().includes(searchTerm) ||
+                    (coach.last_name && coach.last_name.toLowerCase().includes(searchTerm)) ||
+                    coach.phone.includes(searchTerm) ||
+                    coach.email.toLowerCase().includes(searchTerm)
+                );
+            }
+
+            renderCoachesGrid(filteredCoaches);
+        }
+
+        function loadStats() {
+            const coaches = allCoaches;
+            const members = LocalStorageDriver.getAll('members');
+
+            document.getElementById('totalCoaches').textContent = coaches.length;
+            document.getElementById('activeCoaches').textContent = coaches.filter(c => c.active !== false).length;
+
+            const totalAssigned = members.filter(m => m.coach_id).length;
+            document.getElementById('totalMembersAssigned').textContent = totalAssigned;
+
+            const activeCoaches = coaches.filter(c => c.active !== false);
+            const avgPerCoach = activeCoaches.length > 0 ? Math.round(totalAssigned / activeCoaches.length) : 0;
+            document.getElementById('avgMembersPerCoach').textContent = avgPerCoach;
+        }
+
+        // Render Functions
+        function renderCoachesGrid(coaches) {
+            const container = document.getElementById('coachesGrid');
+            const emptyState = document.getElementById('emptyState');
+
+            if (coaches.length === 0) {
+                container.innerHTML = '';
+                emptyState.classList.remove('hidden');
+                return;
+            }
+
+            emptyState.classList.add('hidden');
+            container.innerHTML = '';
+
+            coaches.forEach(coach => {
+                const members = LocalStorageDriver.getAll('members');
+                const assignedMembers = members.filter(m => m.coach_id === coach.id);
+
+                const coachCard = document.createElement('div');
+                coachCard.className = 'bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-shadow duration-300';
+                coachCard.innerHTML = `
+                    <div class="p-6">
+                        <div class="flex items-center space-x-4 mb-4">
+                            <div class="bg-blue-100 text-blue-600 w-16 h-16 rounded-full flex items-center justify-center text-xl">
+                                <i class="fas fa-user-tie"></i>
+                            </div>
+                            <div class="flex-1">
+                                <h3 class="text-lg font-bold text-gray-900">${coach.name} ${coach.last_name || ''}</h3>
+                                <p class="text-sm text-gray-600">${getSpecialtyText(coach.specialty)}</p>
+                            </div>
+                            <span class="px-2 py-1 rounded text-xs ${coach.active !== false ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}">
+                                ${coach.active !== false ? 'Activo' : 'Inactivo'}
+                            </span>
+                        </div>
+
+                        <div class="space-y-2 text-sm text-gray-600 mb-4">
+                            <div class="flex items-center">
+                                <i class="fas fa-phone mr-2 w-4"></i>
+                                <span>${coach.phone}</span>
+                            </div>
+                            <div class="flex items-center">
+                                <i class="fas fa-envelope mr-2 w-4"></i>
+                                <span class="truncate">${coach.email}</span>
+                            </div>
+                            <div class="flex items-center">
+                                <i class="fas fa-briefcase mr-2 w-4"></i>
+                                <span>${coach.experience || 0} años exp.</span>
+                            </div>
+                        </div>
+
+                        <div class="flex items-center justify-between pt-4 border-t border-gray-200">
+                            <span class="text-sm text-gray-500">
+                                <i class="fas fa-users mr-1"></i>
+                                ${assignedMembers.length} miembros
+                            </span>
+                            <div class="flex space-x-2">
+                                <button onclick="showCoachDetails('${coach.id}')" class="text-blue-600 hover:text-blue-800" title="Ver detalles">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                                <button onclick="editCoach('${coach.id}')" class="text-yellow-600 hover:text-yellow-800" title="Editar">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button onclick="showAssignMembersModal('${coach.id}')" class="text-green-600 hover:text-green-800" title="Asignar miembros">
+                                    <i class="fas fa-user-plus"></i>
+                                </button>
+                                <button onclick="deleteCoach('${coach.id}')" class="text-red-600 hover:text-red-800" title="Eliminar">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                container.appendChild(coachCard);
+            });
+        }
+
+        // Coach Actions
+        document.getElementById('coachForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const coachData = {
+                name: document.getElementById('coachName').value,
+                last_name: document.getElementById('coachLastName').value,
+                phone: document.getElementById('coachPhone').value,
+                email: document.getElementById('coachEmail').value,
+                specialty: document.getElementById('coachSpecialty').value,
+                experience: parseInt(document.getElementById('coachExperience').value) || 0,
+                certifications: getCertifications(),
+                start_time: document.getElementById('coachStartTime').value,
+                end_time: document.getElementById('coachEndTime').value,
+                work_days: getWorkDays(),
+                notes: document.getElementById('coachNotes').value,
+                active: document.getElementById('coachActive').checked
+            };
+
+            if (!Utilities.validatePhone(coachData.phone)) {
+                Utilities.showToast('Número de teléfono inválido', 'error');
+                return;
+            }
+
+            if (!Utilities.validateEmail(coachData.email)) {
+                Utilities.showToast('Email inválido', 'error');
+                return;
+            }
+
+            try {
+                if (editingCoachId) {
+                    LocalStorageDriver.update('coaches', editingCoachId, coachData);
+                    Utilities.showToast('Coach actualizado exitosamente');
+                } else {
+                    LocalStorageDriver.create('coaches', coachData);
+                    Utilities.showToast('Coach agregado exitosamente');
+                }
+                
+                closeAddCoachModal();
+                loadCoaches();
+                loadStats();
+            } catch (error) {
+                Utilities.showToast('Error al guardar el coach', 'error');
+            }
+        });
+
+        function editCoach(coachId) {
+            const coach = allCoaches.find(c => c.id === coachId);
+            if (!coach) return;
+
+            editingCoachId = coachId;
+            document.getElementById('coachModalTitle').textContent = 'Editar Coach';
+            document.getElementById('coachSubmitText').textContent = 'Actualizar Coach';
+            
+            // Llenar formulario con datos del coach
+            document.getElementById('coachName').value = coach.name;
+            document.getElementById('coachLastName').value = coach.last_name || '';
+            document.getElementById('coachPhone').value = coach.phone;
+            document.getElementById('coachEmail').value = coach.email;
+            document.getElementById('coachSpecialty').value = coach.specialty;
+            document.getElementById('coachExperience').value = coach.experience || '';
+            document.getElementById('coachStartTime').value = coach.start_time || '06:00';
+            document.getElementById('coachEndTime').value = coach.end_time || '22:00';
+            document.getElementById('coachNotes').value = coach.notes || '';
+            document.getElementById('coachActive').checked = coach.active !== false;
+
+            // Llenar certificaciones
+            const certificationsContainer = document.getElementById('certificationsContainer');
+            certificationsContainer.innerHTML = '';
+            const certifications = coach.certifications || [];
+            certifications.forEach(cert => {
+                addCertificationField(cert);
+            });
+            addCertificationField(); // Campo vacío adicional
+
+            // Llenar días de trabajo
+            const workDays = coach.work_days || ['lunes', 'martes', 'miercoles', 'jueves', 'viernes'];
+            document.querySelectorAll('.work-day').forEach(checkbox => {
+                checkbox.checked = workDays.includes(checkbox.value);
+            });
+
+            document.getElementById('addCoachModal').classList.remove('hidden');
+        }
+
+        function deleteCoach(coachId) {
+            // Verificar si hay miembros asignados a este coach
+            const members = LocalStorageDriver.getAll('members');
+            const membersWithCoach = members.filter(m => m.coach_id === coachId);
+            
+            if (membersWithCoach.length > 0) {
+                Utilities.showToast(`No se puede eliminar: ${membersWithCoach.length} miembros están asignados a este coach`, 'error');
+                return;
+            }
+
+            if (confirm('¿Estás seguro de que quieres eliminar este coach?')) {
+                LocalStorageDriver.delete('coaches', coachId);
+                Utilities.showToast('Coach eliminado exitosamente');
+                loadCoaches();
+                loadStats();
+            }
+        }
+
+        // Utility Functions
+        function getSpecialtyText(specialty) {
+            const texts = {
+                'fuerza': 'Entrenamiento de Fuerza',
+                'hipertrofia': 'Hipertrofia Muscular',
+                'cardio': 'Cardio y Pérdida de Peso',
+                'funcional': 'Entrenamiento Funcional',
+                'rehabilitacion': 'Rehabilitación',
+                'nutricion': 'Nutrición Deportiva',
+                'crossfit': 'CrossFit',
+                'yoga': 'Yoga y Pilates'
+            };
+            return texts[specialty] || specialty;
+        }
+
+        function getWorkDaysText(workDays) {
+            if (!workDays || workDays.length === 0) return 'No especificado';
+            
+            const dayNames = {
+                'lunes': 'Lun',
+                'martes': 'Mar',
+                'miercoles': 'Mié',
+                'jueves': 'Jue',
+                'viernes': 'Vie',
+                'sabado': 'Sáb',
+                'domingo': 'Dom'
+            };
+            
+            return workDays.map(day => dayNames[day] || day).join(', ');
+        }
+
+        // Event Listeners
+        document.getElementById('searchInput').addEventListener('input', function() {
+            loadCoaches();
+        });
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            loadCoachesData();
+        });
+    </script>
+</body>
+</html>

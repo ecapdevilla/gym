@@ -1,0 +1,677 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Asistencia - PowerGym</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="shared.js"></script>
+</head>
+<body class="bg-gray-100">
+    <!-- Navbar -->
+    <nav class="bg-blue-600 text-white p-4 shadow-lg">
+        <div class="container mx-auto flex justify-between items-center">
+            <div class="flex items-center space-x-4">
+                <a href="dashboard.html" class="text-white hover:text-blue-200">
+                    <i class="fas fa-arrow-left"></i>
+                </a>
+                <h1 class="text-xl font-bold">✅ Control de Asistencia</h1>
+            </div>
+            <div class="flex items-center space-x-4">
+                <span id="userName" class="hidden md:block"></span>
+                <button onclick="logout()" class="bg-red-500 hover:bg-red-600 px-4 py-2 rounded-lg flex items-center">
+                    <i class="fas fa-sign-out-alt mr-2"></i>
+                    <span class="hidden md:inline">Salir</span>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Mobile Menu -->
+    <div class="bg-blue-500 text-white p-2 md:hidden">
+        <button onclick="goToDashboard()" class="w-full text-left">
+            <i class="fas fa-arrow-left mr-2"></i> Volver al Dashboard
+        </button>
+    </div>
+
+    <!-- Main Content -->
+    <div class="container mx-auto p-4">
+        <!-- Header Stats -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+            <div class="bg-white rounded-lg shadow p-4 text-center">
+                <div class="text-2xl font-bold text-blue-600" id="todayAttendance">0</div>
+                <div class="text-gray-600 text-sm">Asistencia Hoy</div>
+            </div>
+            <div class="bg-white rounded-lg shadow p-4 text-center">
+                <div class="text-2xl font-bold text-green-600" id="weekAttendance">0</div>
+                <div class="text-gray-600 text-sm">Esta Semana</div>
+            </div>
+            <div class="bg-white rounded-lg shadow p-4 text-center">
+                <div class="text-2xl font-bold text-purple-600" id="monthAttendance">0</div>
+                <div class="text-gray-600 text-sm">Este Mes</div>
+            </div>
+            <div class="bg-white rounded-lg shadow p-4 text-center">
+                <div class="text-2xl font-bold text-orange-600" id="currentInGym">0</div>
+                <div class="text-gray-600 text-sm">En el Gimnasio</div>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="bg-white rounded-lg shadow-lg p-6 mb-6">
+            <h3 class="text-lg font-bold mb-4">Registro Rápido</h3>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <!-- Búsqueda por Teléfono -->
+                <div class="space-y-2">
+                    <label class="block text-sm font-medium text-gray-700">Buscar por Teléfono</label>
+                    <div class="flex space-x-2">
+                        <input type="text" id="phoneSearch" placeholder="300 123 4567" 
+                               class="flex-1 p-3 border border-gray-300 rounded-lg">
+                        <button onclick="searchByPhone()" class="bg-blue-500 text-white p-3 rounded-lg">
+                            <i class="fas fa-search"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Búsqueda por Nombre -->
+                <div class="space-y-2">
+                    <label class="block text-sm font-medium text-gray-700">Buscar por Nombre</label>
+                    <div class="flex space-x-2">
+                        <input type="text" id="nameSearch" placeholder="Nombre del miembro" 
+                               class="flex-1 p-3 border border-gray-300 rounded-lg">
+                        <button onclick="searchByName()" class="bg-green-500 text-white p-3 rounded-lg">
+                            <i class="fas fa-search"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Registro Manual -->
+                <div class="space-y-2">
+                    <label class="block text-sm font-medium text-gray-700">Registro Manual</label>
+                    <button onclick="showManualRegistration()" class="w-full bg-purple-500 hover:bg-purple-600 text-white p-3 rounded-lg">
+                        <i class="fas fa-user-plus mr-2"></i>Seleccionar Miembro
+                    </button>
+                </div>
+            </div>
+
+            <!-- Resultado de Búsqueda -->
+            <div id="searchResults" class="mt-4 hidden">
+                <!-- Los resultados se mostrarán aquí -->
+            </div>
+        </div>
+
+        <!-- Today's Attendance -->
+        <div class="bg-white rounded-lg shadow-lg p-6 mb-6">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-bold">Asistencia de Hoy</h3>
+                <div class="text-sm text-gray-500" id="currentDate"></div>
+            </div>
+
+            <div class="overflow-x-auto">
+                <table class="w-full">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Miembro</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden md:table-cell">Hora Entrada</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden lg:table-cell">Hora Salida</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Duración</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="todayAttendanceTable" class="bg-white divide-y divide-gray-200">
+                        <!-- La asistencia de hoy se cargará aquí -->
+                    </tbody>
+                </table>
+            </div>
+
+            <div id="emptyToday" class="text-center py-8 hidden">
+                <i class="fas fa-clipboard-check text-4xl text-gray-300 mb-4"></i>
+                <h3 class="text-lg font-medium text-gray-900">No hay registros hoy</h3>
+                <p class="text-gray-500">Comienza registrando la primera asistencia del día.</p>
+            </div>
+        </div>
+
+        <!-- Attendance History -->
+        <div class="bg-white rounded-lg shadow-lg p-6">
+            <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-4">
+                <h3 class="text-lg font-bold">Historial de Asistencia</h3>
+                <div class="flex space-x-2 mt-2 md:mt-0">
+                    <input type="date" id="historyDate" class="p-2 border border-gray-300 rounded-lg">
+                    <button onclick="loadAttendanceHistory()" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg">
+                        <i class="fas fa-filter mr-2"></i>Filtrar
+                    </button>
+                </div>
+            </div>
+
+            <div class="overflow-x-auto">
+                <table class="w-full">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fecha</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Miembro</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden md:table-cell">Entrada</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden md:table-cell">Salida</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Duración</th>
+                        </tr>
+                    </thead>
+                    <tbody id="attendanceHistoryTable" class="bg-white divide-y divide-gray-200">
+                        <!-- El historial se cargará aquí -->
+                    </tbody>
+                </table>
+            </div>
+
+            <div id="emptyHistory" class="text-center py-8 hidden">
+                <i class="fas fa-history text-4xl text-gray-300 mb-4"></i>
+                <h3 class="text-lg font-medium text-gray-900">No hay historial de asistencia</h3>
+                <p class="text-gray-500">Los registros de asistencia aparecerán aquí.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Manual Registration Modal -->
+    <div id="manualRegistrationModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 hidden">
+        <div class="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <div class="p-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-xl font-bold">Registrar Asistencia Manual</h3>
+                    <button onclick="closeManualRegistration()" class="text-gray-400 hover:text-gray-600">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+
+                <div class="mb-4">
+                    <input type="text" id="memberSearch" placeholder="Buscar miembro por nombre..." 
+                           class="w-full p-3 border border-gray-300 rounded-lg" onkeyup="searchMembers()">
+                </div>
+
+                <div id="membersList" class="space-y-2 max-h-96 overflow-y-auto">
+                    <!-- La lista de miembros se cargará aquí -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Check-out Modal -->
+    <div id="checkoutModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 hidden">
+        <div class="bg-white rounded-lg shadow-xl w-full max-w-md">
+            <div class="p-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-xl font-bold">Registrar Salida</h3>
+                    <button onclick="closeCheckoutModal()" class="text-gray-400 hover:text-gray-600">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+
+                <div id="checkoutInfo" class="mb-4">
+                    <!-- La información del miembro se cargará aquí -->
+                </div>
+
+                <div class="flex justify-end space-x-3">
+                    <button onclick="closeCheckoutModal()" class="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50">
+                        Cancelar
+                    </button>
+                    <button onclick="confirmCheckout()" class="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600">
+                        Registrar Salida
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let selectedMemberForCheckout = null;
+        let currentCheckinId = null;
+
+        function goToDashboard() {
+            window.location.href = 'dashboard.html';
+        }
+
+        function logout() {
+            AuthManager.logout();
+            window.location.href = 'index.html';
+        }
+
+        // Modal Functions
+        function showManualRegistration() {
+            loadAllMembers();
+            document.getElementById('manualRegistrationModal').classList.remove('hidden');
+        }
+
+        function closeManualRegistration() {
+            document.getElementById('manualRegistrationModal').classList.add('hidden');
+            document.getElementById('memberSearch').value = '';
+        }
+
+        function showCheckoutModal(memberId, checkinId) {
+            const member = LocalStorageDriver.getAll('members').find(m => m.id === memberId);
+            const checkin = LocalStorageDriver.getAll('attendance').find(a => a.id === checkinId);
+            
+            if (!member || !checkin) return;
+
+            selectedMemberForCheckout = memberId;
+            currentCheckinId = checkinId;
+
+            const entryTime = new Date(checkin.check_in);
+            const currentTime = new Date();
+            const duration = Math.round((currentTime - entryTime) / (1000 * 60)); // minutos
+
+            document.getElementById('checkoutInfo').innerHTML = `
+                <div class="bg-gray-50 p-4 rounded-lg">
+                    <div class="flex items-center space-x-3 mb-3">
+                        <div class="bg-blue-100 text-blue-600 w-10 h-10 rounded-full flex items-center justify-center">
+                            <i class="fas fa-user"></i>
+                        </div>
+                        <div>
+                            <h4 class="font-bold">${member.name} ${member.last_name || ''}</h4>
+                            <p class="text-sm text-gray-600">${member.phone}</p>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4 text-sm">
+                        <div>
+                            <label class="font-medium">Hora de entrada:</label>
+                            <p>${entryTime.toLocaleTimeString('es-CO')}</p>
+                        </div>
+                        <div>
+                            <label class="font-medium">Tiempo transcurrido:</label>
+                            <p>${duration} minutos</p>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            document.getElementById('checkoutModal').classList.remove('hidden');
+        }
+
+        function closeCheckoutModal() {
+            document.getElementById('checkoutModal').classList.add('hidden');
+            selectedMemberForCheckout = null;
+            currentCheckinId = null;
+        }
+
+        // Search Functions
+        function searchByPhone() {
+            const phone = document.getElementById('phoneSearch').value.trim();
+            if (!phone) {
+                Utilities.showToast('Ingresa un número de teléfono', 'error');
+                return;
+            }
+
+            const members = LocalStorageDriver.getAll('members');
+            const member = members.find(m => m.phone.includes(phone));
+            
+            if (member) {
+                showSearchResult(member);
+            } else {
+                Utilities.showToast('No se encontró ningún miembro con ese teléfono', 'error');
+            }
+        }
+
+        function searchByName() {
+            const name = document.getElementById('nameSearch').value.trim().toLowerCase();
+            if (!name) {
+                Utilities.showToast('Ingresa un nombre', 'error');
+                return;
+            }
+
+            const members = LocalStorageDriver.getAll('members');
+            const matchingMembers = members.filter(m => 
+                m.name.toLowerCase().includes(name) || 
+                (m.last_name && m.last_name.toLowerCase().includes(name))
+            );
+
+            if (matchingMembers.length === 1) {
+                showSearchResult(matchingMembers[0]);
+            } else if (matchingMembers.length > 1) {
+                showMultipleResults(matchingMembers);
+            } else {
+                Utilities.showToast('No se encontraron miembros con ese nombre', 'error');
+            }
+        }
+
+        function showSearchResult(member) {
+            const container = document.getElementById('searchResults');
+            container.innerHTML = `
+                <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center space-x-3">
+                            <div class="bg-blue-100 text-blue-600 w-12 h-12 rounded-full flex items-center justify-center">
+                                <i class="fas fa-user"></i>
+                            </div>
+                            <div>
+                                <h4 class="font-bold">${member.name} ${member.last_name || ''}</h4>
+                                <p class="text-sm text-gray-600">${member.phone} • ${member.plan_id || 'Sin plan'}</p>
+                            </div>
+                        </div>
+                        <button onclick="registerAttendance('${member.id}')" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg">
+                            <i class="fas fa-check mr-2"></i>Registrar Entrada
+                        </button>
+                    </div>
+                </div>
+            `;
+            container.classList.remove('hidden');
+        }
+
+        function showMultipleResults(members) {
+            const container = document.getElementById('searchResults');
+            container.innerHTML = `
+                <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                    <h4 class="font-bold mb-2">Múltiples resultados encontrados:</h4>
+                    <div class="space-y-2">
+                        ${members.map(member => `
+                            <div class="flex items-center justify-between p-2 bg-white rounded">
+                                <div>
+                                    <span class="font-medium">${member.name} ${member.last_name || ''}</span>
+                                    <span class="text-sm text-gray-600 ml-2">${member.phone}</span>
+                                </div>
+                                <button onclick="registerAttendance('${member.id}')" class="bg-green-500 text-white px-3 py-1 rounded text-sm">
+                                    Registrar
+                                </button>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+            container.classList.remove('hidden');
+        }
+
+        // Member List Functions
+        function loadAllMembers() {
+            const members = LocalStorageDriver.getAll('members').filter(m => m.status === 'active');
+            const container = document.getElementById('membersList');
+            
+            if (members.length === 0) {
+                container.innerHTML = '<p class="text-gray-500 text-center">No hay miembros activos</p>';
+                return;
+            }
+
+            container.innerHTML = members.map(member => `
+                <div class="flex items-center justify-between p-3 border border-gray-200 rounded-lg hover:bg-gray-50 member-item">
+                    <div class="flex items-center space-x-3">
+                        <div class="bg-blue-100 text-blue-600 w-10 h-10 rounded-full flex items-center justify-center">
+                            <i class="fas fa-user"></i>
+                        </div>
+                        <div>
+                            <h4 class="font-medium">${member.name} ${member.last_name || ''}</h4>
+                            <p class="text-sm text-gray-600">${member.phone}</p>
+                        </div>
+                    </div>
+                    <button onclick="registerAttendance('${member.id}')" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg">
+                        Registrar
+                    </button>
+                </div>
+            `).join('');
+        }
+
+        function searchMembers() {
+            const searchTerm = document.getElementById('memberSearch').value.toLowerCase();
+            const members = LocalStorageDriver.getAll('members').filter(m => m.status === 'active');
+            const container = document.getElementById('membersList');
+            
+            const filteredMembers = members.filter(member => 
+                member.name.toLowerCase().includes(searchTerm) ||
+                (member.last_name && member.last_name.toLowerCase().includes(searchTerm)) ||
+                member.phone.includes(searchTerm)
+            );
+
+            if (filteredMembers.length === 0) {
+                container.innerHTML = '<p class="text-gray-500 text-center">No se encontraron miembros</p>';
+                return;
+            }
+
+            container.innerHTML = filteredMembers.map(member => `
+                <div class="flex items-center justify-between p-3 border border-gray-200 rounded-lg hover:bg-gray-50 member-item">
+                    <div class="flex items-center space-x-3">
+                        <div class="bg-blue-100 text-blue-600 w-10 h-10 rounded-full flex items-center justify-center">
+                            <i class="fas fa-user"></i>
+                        </div>
+                        <div>
+                            <h4 class="font-medium">${member.name} ${member.last_name || ''}</h4>
+                            <p class="text-sm text-gray-600">${member.phone}</p>
+                        </div>
+                    </div>
+                    <button onclick="registerAttendance('${member.id}')" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg">
+                        Registrar
+                    </button>
+                </div>
+            `).join('');
+        }
+
+        // Attendance Functions
+        function registerAttendance(memberId) {
+            // Verificar si ya tiene un check-in activo
+            const todayCheckins = getTodayAttendance();
+            const activeCheckin = todayCheckins.find(checkin => 
+                checkin.member_id === memberId && !checkin.check_out
+            );
+
+            if (activeCheckin) {
+                showCheckoutModal(memberId, activeCheckin.id);
+                return;
+            }
+
+            // Registrar nuevo check-in
+            const attendanceData = {
+                member_id: memberId,
+                check_in: new Date().toISOString(),
+                check_out: null
+            };
+
+            try {
+                LocalStorageDriver.create('attendance', attendanceData);
+                Utilities.showToast('Entrada registrada exitosamente');
+                
+                // Limpiar búsquedas
+                document.getElementById('searchResults').classList.add('hidden');
+                document.getElementById('phoneSearch').value = '';
+                document.getElementById('nameSearch').value = '';
+                closeManualRegistration();
+                
+                // Actualizar datos
+                loadAttendanceData();
+            } catch (error) {
+                Utilities.showToast('Error al registrar asistencia', 'error');
+            }
+        }
+
+        function confirmCheckout() {
+            if (!currentCheckinId) return;
+
+            const checkoutData = {
+                check_out: new Date().toISOString()
+            };
+
+            try {
+                LocalStorageDriver.update('attendance', currentCheckinId, checkoutData);
+                Utilities.showToast('Salida registrada exitosamente');
+                closeCheckoutModal();
+                loadAttendanceData();
+            } catch (error) {
+                Utilities.showToast('Error al registrar salida', 'error');
+            }
+        }
+
+        // Data Loading
+        function loadAttendanceData() {
+            const user = AuthManager.getCurrentUser();
+            if (!user) {
+                window.location.href = 'index.html';
+                return;
+            }
+
+            document.getElementById('userName').textContent = `${user.name} ${user.last_name || ''}`;
+            document.getElementById('currentDate').textContent = new Date().toLocaleDateString('es-CO', { 
+                weekday: 'long', 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric' 
+            });
+
+            loadStats();
+            loadTodayAttendance();
+            loadAttendanceHistory();
+        }
+
+        function loadStats() {
+            const attendance = LocalStorageDriver.getAll('attendance');
+            const today = new Date().toDateString();
+            
+            // Asistencia hoy
+            const todayAttendance = attendance.filter(a => 
+                new Date(a.check_in).toDateString() === today
+            );
+            document.getElementById('todayAttendance').textContent = todayAttendance.length;
+
+            // Asistencia esta semana
+            const weekStart = new Date();
+            weekStart.setDate(weekStart.getDate() - weekStart.getDay());
+            const weekAttendance = attendance.filter(a => 
+                new Date(a.check_in) >= weekStart
+            );
+            document.getElementById('weekAttendance').textContent = weekAttendance.length;
+
+            // Asistencia este mes
+            const monthStart = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+            const monthAttendance = attendance.filter(a => 
+                new Date(a.check_in) >= monthStart
+            );
+            document.getElementById('monthAttendance').textContent = monthAttendance.length;
+
+            // Actualmente en el gimnasio
+            const currentlyInGym = todayAttendance.filter(a => !a.check_out);
+            document.getElementById('currentInGym').textContent = currentlyInGym.length;
+        }
+
+        function getTodayAttendance() {
+            const today = new Date().toDateString();
+            return LocalStorageDriver.getAll('attendance').filter(a => 
+                new Date(a.check_in).toDateString() === today
+            );
+        }
+
+        function loadTodayAttendance() {
+            const todayAttendance = getTodayAttendance();
+            const container = document.getElementById('todayAttendanceTable');
+            const emptyState = document.getElementById('emptyToday');
+
+            if (todayAttendance.length === 0) {
+                container.innerHTML = '';
+                emptyState.classList.remove('hidden');
+                return;
+            }
+
+            emptyState.classList.add('hidden');
+            container.innerHTML = '';
+
+            todayAttendance.forEach(record => {
+                const member = LocalStorageDriver.getAll('members').find(m => m.id === record.member_id);
+                if (!member) return;
+
+                const entryTime = new Date(record.check_in);
+                const exitTime = record.check_out ? new Date(record.check_out) : null;
+                const duration = exitTime ? Math.round((exitTime - entryTime) / (1000 * 60)) : null;
+
+                const row = document.createElement('tr');
+                row.className = 'hover:bg-gray-50';
+                row.innerHTML = `
+                    <td class="px-4 py-4 whitespace-nowrap">
+                        <div class="flex items-center">
+                            <div class="flex-shrink-0 h-10 w-10 bg-blue-100 rounded-full flex items-center justify-center">
+                                <i class="fas fa-user text-blue-600"></i>
+                            </div>
+                            <div class="ml-4">
+                                <div class="text-sm font-medium text-gray-900">${member.name} ${member.last_name || ''}</div>
+                                <div class="text-sm text-gray-500">${member.phone}</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-900 hidden md:table-cell">
+                        ${entryTime.toLocaleTimeString('es-CO')}
+                    </td>
+                    <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-900 hidden lg:table-cell">
+                        ${exitTime ? exitTime.toLocaleTimeString('es-CO') : '-'}
+                    </td>
+                    <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
+                        ${duration ? `${duration} min` : '<span class="text-green-600">En el gimnasio</span>'}
+                    </td>
+                    <td class="px-4 py-4 whitespace-nowrap text-sm font-medium">
+                        ${!exitTime ? `
+                            <button onclick="showCheckoutModal('${member.id}', '${record.id}')" 
+                                    class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-sm">
+                                <i class="fas fa-sign-out-alt mr-1"></i>Salida
+                            </button>
+                        ` : 'Completado'}
+                    </td>
+                `;
+                container.appendChild(row);
+            });
+        }
+
+        function loadAttendanceHistory() {
+            const selectedDate = document.getElementById('historyDate').value;
+            let attendance = LocalStorageDriver.getAll('attendance');
+
+            // Filtrar por fecha si se seleccionó una
+            if (selectedDate) {
+                attendance = attendance.filter(a => 
+                    new Date(a.check_in).toDateString() === new Date(selectedDate).toDateString()
+                );
+            }
+
+            // Ordenar por fecha más reciente
+            attendance.sort((a, b) => new Date(b.check_in) - new Date(a.check_in));
+
+            const container = document.getElementById('attendanceHistoryTable');
+            const emptyState = document.getElementById('emptyHistory');
+
+            if (attendance.length === 0) {
+                container.innerHTML = '';
+                emptyState.classList.remove('hidden');
+                return;
+            }
+
+            emptyState.classList.add('hidden');
+            container.innerHTML = '';
+
+            attendance.slice(0, 20).forEach(record => { // Mostrar solo los últimos 20 registros
+                const member = LocalStorageDriver.getAll('members').find(m => m.id === record.member_id);
+                if (!member) return;
+
+                const entryTime = new Date(record.check_in);
+                const exitTime = record.check_out ? new Date(record.check_out) : null;
+                const duration = exitTime ? Math.round((exitTime - entryTime) / (1000 * 60)) : null;
+
+                const row = document.createElement('tr');
+                row.className = 'hover:bg-gray-50';
+                row.innerHTML = `
+                    <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
+                        ${Utilities.formatDate(record.check_in)}
+                    </td>
+                    <td class="px-4 py-4 whitespace-nowrap">
+                        <div class="text-sm font-medium text-gray-900">${member.name} ${member.last_name || ''}</div>
+                        <div class="text-sm text-gray-500">${member.phone}</div>
+                    </td>
+                    <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-900 hidden md:table-cell">
+                        ${entryTime.toLocaleTimeString('es-CO')}
+                    </td>
+                    <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-900 hidden md:table-cell">
+                        ${exitTime ? exitTime.toLocaleTimeString('es-CO') : '-'}
+                    </td>
+                    <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
+                        ${duration ? `${duration} min` : 'Sin registrar'}
+                    </td>
+                `;
+                container.appendChild(row);
+            });
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            loadAttendanceData();
+            
+            // Establecer fecha actual como valor por defecto
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('historyDate').value = today;
+        });
+    </script>
+</body>
+</html>

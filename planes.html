@@ -1,0 +1,598 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Planes - PowerGym</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="shared.js"></script>
+</head>
+<body class="bg-gray-100">
+    <!-- Navbar -->
+    <nav class="bg-blue-600 text-white p-4 shadow-lg">
+        <div class="container mx-auto flex justify-between items-center">
+            <div class="flex items-center space-x-4">
+                <a href="dashboard.html" class="text-white hover:text-blue-200">
+                    <i class="fas fa-arrow-left"></i>
+                </a>
+                <h1 class="text-xl font-bold">💳 Gestión de Planes</h1>
+            </div>
+            <div class="flex items-center space-x-4">
+                <span id="userName" class="hidden md:block"></span>
+                <button onclick="logout()" class="bg-red-500 hover:bg-red-600 px-4 py-2 rounded-lg flex items-center">
+                    <i class="fas fa-sign-out-alt mr-2"></i>
+                    <span class="hidden md:inline">Salir</span>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Mobile Menu -->
+    <div class="bg-blue-500 text-white p-2 md:hidden">
+        <button onclick="goToDashboard()" class="w-full text-left">
+            <i class="fas fa-arrow-left mr-2"></i> Volver al Dashboard
+        </button>
+    </div>
+
+    <!-- Main Content -->
+    <div class="container mx-auto p-4">
+        <!-- Header Stats -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+            <div class="bg-white rounded-lg shadow p-4 text-center">
+                <div class="text-2xl font-bold text-blue-600" id="totalPlans">0</div>
+                <div class="text-gray-600 text-sm">Total Planes</div>
+            </div>
+            <div class="bg-white rounded-lg shadow p-4 text-center">
+                <div class="text-2xl font-bold text-green-600" id="activePlans">0</div>
+                <div class="text-gray-600 text-sm">Plan Más Popular</div>
+            </div>
+            <div class="bg-white rounded-lg shadow p-4 text-center">
+                <div class="text-2xl font-bold text-purple-600" id="avgPrice">$0</div>
+                <div class="text-gray-600 text-sm">Precio Promedio</div>
+            </div>
+            <div class="bg-white rounded-lg shadow p-4 text-center">
+                <div class="text-2xl font-bold text-orange-600" id="monthlyRevenue">$0</div>
+                <div class="text-gray-600 text-sm">Ingresos Mensuales</div>
+            </div>
+        </div>
+
+        <!-- Action Bar -->
+        <div class="bg-white rounded-lg shadow-lg p-4 mb-6">
+            <div class="flex flex-col md:flex-row md:items-center md:justify-between space-y-4 md:space-y-0">
+                <div class="flex-1">
+                    <div class="relative">
+                        <input type="text" id="searchInput" placeholder="Buscar planes..." 
+                               class="w-full md:w-64 p-3 border border-gray-300 rounded-lg pl-10">
+                        <i class="fas fa-search absolute left-3 top-3 text-gray-400"></i>
+                    </div>
+                </div>
+                <div class="flex space-x-2">
+                    <button onclick="showAddPlanModal()" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center">
+                        <i class="fas fa-plus mr-2"></i> Nuevo Plan
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Plans Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="plansGrid">
+            <!-- Los planes se cargarán aquí -->
+        </div>
+
+        <!-- Empty State -->
+        <div id="emptyState" class="text-center py-12 hidden">
+            <i class="fas fa-credit-card text-4xl text-gray-300 mb-4"></i>
+            <h3 class="text-lg font-medium text-gray-900">No hay planes configurados</h3>
+            <p class="text-gray-500 mt-1">Comienza creando tu primer plan de membresía.</p>
+            <button onclick="showAddPlanModal()" class="mt-4 bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-lg">
+                <i class="fas fa-plus mr-2"></i>Crear Plan
+            </button>
+        </div>
+    </div>
+
+    <!-- Add Plan Modal -->
+    <div id="addPlanModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 hidden">
+        <div class="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <div class="p-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-xl font-bold" id="planModalTitle">Crear Nuevo Plan</h3>
+                    <button onclick="closeAddPlanModal()" class="text-gray-400 hover:text-gray-600">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+
+                <form id="planForm" class="space-y-4">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Nombre del Plan *</label>
+                            <input type="text" id="planName" required 
+                                   class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                   placeholder="Ej: Plan Premium">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Precio (COP) *</label>
+                            <input type="number" id="planPrice" required min="0" step="1000"
+                                   class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                   placeholder="80000">
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Duración (días) *</label>
+                            <input type="number" id="planDuration" required min="1"
+                                   class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                   placeholder="30">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Tipo de Plan</label>
+                            <select id="planType" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                <option value="regular">Regular</option>
+                                <option value="premium">Premium</option>
+                                <option value="vip">VIP</option>
+                                <option value="trial">Prueba</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Descripción</label>
+                        <textarea id="planDescription" rows="2"
+                                  class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                  placeholder="Describe los beneficios del plan..."></textarea>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-3">Características Incluidas</label>
+                        <div class="space-y-2" id="featuresContainer">
+                            <div class="flex items-center space-x-2">
+                                <input type="text" placeholder="Nueva característica" 
+                                       class="flex-1 p-2 border border-gray-300 rounded-lg feature-input">
+                                <button type="button" onclick="addFeatureField()" class="bg-green-500 text-white p-2 rounded-lg">
+                                    <i class="fas fa-plus"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center space-x-2">
+                        <input type="checkbox" id="planActive" class="rounded text-blue-500" checked>
+                        <label for="planActive" class="text-sm font-medium text-gray-700">Plan activo y disponible</label>
+                    </div>
+
+                    <div class="flex justify-end space-x-3 pt-4">
+                        <button type="button" onclick="closeAddPlanModal()" 
+                                class="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50">
+                            Cancelar
+                        </button>
+                        <button type="submit" class="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600">
+                            <span id="planSubmitText">Crear Plan</span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Plan Details Modal -->
+    <div id="planDetailsModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 hidden">
+        <div class="bg-white rounded-lg shadow-xl w-full max-w-md">
+            <div class="p-6">
+                <div class="flex justify-between items-center mb-6">
+                    <h3 class="text-xl font-bold" id="detailPlanName">Detalles del Plan</h3>
+                    <button onclick="closePlanDetailsModal()" class="text-gray-400 hover:text-gray-600">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+
+                <div id="planDetailsContent">
+                    <!-- Los detalles del plan se cargarán aquí -->
+                </div>
+
+                <div class="mt-6 flex space-x-3">
+                    <button onclick="closePlanDetailsModal()" class="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50">
+                        Cerrar
+                    </button>
+                    <button id="editPlanBtn" class="flex-1 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600">
+                        Editar Plan
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let editingPlanId = null;
+        let allPlans = [];
+
+        function goToDashboard() {
+            window.location.href = 'dashboard.html';
+        }
+
+        function logout() {
+            AuthManager.logout();
+            window.location.href = 'index.html';
+        }
+
+        // Modal Functions
+        function showAddPlanModal() {
+            editingPlanId = null;
+            document.getElementById('planModalTitle').textContent = 'Crear Nuevo Plan';
+            document.getElementById('planSubmitText').textContent = 'Crear Plan';
+            document.getElementById('planForm').reset();
+            document.getElementById('featuresContainer').innerHTML = `
+                <div class="flex items-center space-x-2">
+                    <input type="text" placeholder="Nueva característica" 
+                           class="flex-1 p-2 border border-gray-300 rounded-lg feature-input">
+                    <button type="button" onclick="addFeatureField()" class="bg-green-500 text-white p-2 rounded-lg">
+                        <i class="fas fa-plus"></i>
+                    </button>
+                </div>
+            `;
+            document.getElementById('planActive').checked = true;
+            document.getElementById('addPlanModal').classList.remove('hidden');
+        }
+
+        function showEditPlanModal(planId) {
+            const plan = allPlans.find(p => p.id === planId);
+            if (!plan) return;
+
+            editingPlanId = planId;
+            document.getElementById('planModalTitle').textContent = 'Editar Plan';
+            document.getElementById('planSubmitText').textContent = 'Actualizar Plan';
+            
+            // Llenar formulario con datos del plan
+            document.getElementById('planName').value = plan.name;
+            document.getElementById('planPrice').value = plan.price;
+            document.getElementById('planDuration').value = plan.duration_days;
+            document.getElementById('planType').value = plan.type || 'regular';
+            document.getElementById('planDescription').value = plan.description || '';
+            document.getElementById('planActive').checked = plan.active !== false;
+
+            // Llenar características
+            const featuresContainer = document.getElementById('featuresContainer');
+            featuresContainer.innerHTML = '';
+            const features = plan.features || [];
+            features.forEach(feature => {
+                addFeatureField(feature);
+            });
+            addFeatureField(); // Campo vacío adicional
+
+            document.getElementById('addPlanModal').classList.remove('hidden');
+        }
+
+        function closeAddPlanModal() {
+            document.getElementById('addPlanModal').classList.add('hidden');
+            editingPlanId = null;
+        }
+
+        function showPlanDetails(planId) {
+            const plan = allPlans.find(p => p.id === planId);
+            if (!plan) return;
+
+            const members = LocalStorageDriver.getAll('members');
+            const planMembers = members.filter(m => m.plan_id === planId);
+            const activeMembers = planMembers.filter(m => m.status === 'active');
+
+            document.getElementById('detailPlanName').textContent = plan.name;
+            document.getElementById('planDetailsContent').innerHTML = `
+                <div class="space-y-4">
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="text-center p-3 bg-blue-50 rounded-lg">
+                            <div class="text-2xl font-bold text-blue-600">${planMembers.length}</div>
+                            <div class="text-sm text-gray-600">Total Miembros</div>
+                        </div>
+                        <div class="text-center p-3 bg-green-50 rounded-lg">
+                            <div class="text-2xl font-bold text-green-600">${activeMembers.length}</div>
+                            <div class="text-sm text-gray-600">Activos</div>
+                        </div>
+                    </div>
+
+                    <div class="space-y-3">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Información del Plan</label>
+                            <div class="mt-2 space-y-2 text-sm">
+                                <p><strong>Precio:</strong> ${Utilities.formatCurrency(plan.price)}</p>
+                                <p><strong>Duración:</strong> ${plan.duration_days} días</p>
+                                <p><strong>Tipo:</strong> ${getPlanTypeText(plan.type)}</p>
+                                <p><strong>Estado:</strong> <span class="px-2 py-1 rounded text-xs ${plan.active !== false ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}">${plan.active !== false ? 'Activo' : 'Inactivo'}</span></p>
+                            </div>
+                        </div>
+
+                        ${plan.description ? `
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Descripción</label>
+                            <p class="mt-1 text-sm text-gray-600">${plan.description}</p>
+                        </div>
+                        ` : ''}
+
+                        ${plan.features && plan.features.length > 0 ? `
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Características Incluidas</label>
+                            <ul class="mt-2 space-y-1">
+                                ${plan.features.map(feature => `
+                                    <li class="flex items-center text-sm">
+                                        <i class="fas fa-check text-green-500 mr-2"></i>
+                                        ${feature}
+                                    </li>
+                                `).join('')}
+                            </ul>
+                        </div>
+                        ` : ''}
+                    </div>
+                </div>
+            `;
+
+            document.getElementById('editPlanBtn').onclick = () => {
+                closePlanDetailsModal();
+                showEditPlanModal(planId);
+            };
+
+            document.getElementById('planDetailsModal').classList.remove('hidden');
+        }
+
+        function closePlanDetailsModal() {
+            document.getElementById('planDetailsModal').classList.add('hidden');
+        }
+
+        // Feature Management
+        function addFeatureField(value = '') {
+            const container = document.getElementById('featuresContainer');
+            const featureDiv = document.createElement('div');
+            featureDiv.className = 'flex items-center space-x-2';
+            featureDiv.innerHTML = `
+                <input type="text" value="${value}" placeholder="Característica del plan" 
+                       class="flex-1 p-2 border border-gray-300 rounded-lg feature-input">
+                <button type="button" onclick="removeFeatureField(this)" class="bg-red-500 text-white p-2 rounded-lg">
+                    <i class="fas fa-times"></i>
+                </button>
+            `;
+            container.appendChild(featureDiv);
+        }
+
+        function removeFeatureField(button) {
+            const container = document.getElementById('featuresContainer');
+            if (container.children.length > 1) {
+                button.parentElement.remove();
+            }
+        }
+
+        function getFeatures() {
+            const inputs = document.querySelectorAll('.feature-input');
+            const features = Array.from(inputs)
+                .map(input => input.value.trim())
+                .filter(value => value !== '');
+            return features;
+        }
+
+        // Data Loading
+        function loadPlansData() {
+            const user = AuthManager.getCurrentUser();
+            if (!user) {
+                window.location.href = 'index.html';
+                return;
+            }
+
+            document.getElementById('userName').textContent = `${user.name} ${user.last_name || ''}`;
+            loadPlans();
+            loadStats();
+        }
+
+        function loadPlans() {
+            allPlans = LocalStorageDriver.getAll('plans');
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            
+            let filteredPlans = allPlans;
+            if (searchTerm) {
+                filteredPlans = allPlans.filter(plan => 
+                    plan.name.toLowerCase().includes(searchTerm) ||
+                    (plan.description && plan.description.toLowerCase().includes(searchTerm))
+                );
+            }
+
+            renderPlansGrid(filteredPlans);
+        }
+
+        function loadStats() {
+            const plans = allPlans;
+            const members = LocalStorageDriver.getAll('members');
+            const sales = LocalStorageDriver.getAll('sales');
+
+            document.getElementById('totalPlans').textContent = plans.length;
+
+            // Plan más popular
+            const planPopularity = {};
+            members.forEach(member => {
+                if (member.plan_id) {
+                    planPopularity[member.plan_id] = (planPopularity[member.plan_id] || 0) + 1;
+                }
+            });
+
+            let mostPopularPlan = 'N/A';
+            let maxCount = 0;
+            Object.keys(planPopularity).forEach(planId => {
+                if (planPopularity[planId] > maxCount) {
+                    maxCount = planPopularity[planId];
+                    const plan = plans.find(p => p.id === planId);
+                    mostPopularPlan = plan ? plan.name : 'N/A';
+                }
+            });
+            document.getElementById('activePlans').textContent = mostPopularPlan;
+
+            // Precio promedio
+            const totalPrice = plans.reduce((sum, plan) => sum + plan.price, 0);
+            const avgPrice = plans.length > 0 ? Math.round(totalPrice / plans.length) : 0;
+            document.getElementById('avgPrice').textContent = Utilities.formatCurrency(avgPrice);
+
+            // Ingresos mensuales (simplificado)
+            const currentMonth = new Date().getMonth();
+            const monthlySales = sales.filter(s => {
+                const saleDate = new Date(s.date);
+                return saleDate.getMonth() === currentMonth;
+            });
+            const monthlyRevenue = monthlySales.reduce((total, sale) => total + (sale.total || 0), 0);
+            document.getElementById('monthlyRevenue').textContent = Utilities.formatCurrency(monthlyRevenue);
+        }
+
+        // Render Functions
+        function renderPlansGrid(plans) {
+            const container = document.getElementById('plansGrid');
+            const emptyState = document.getElementById('emptyState');
+
+            if (plans.length === 0) {
+                container.innerHTML = '';
+                emptyState.classList.remove('hidden');
+                return;
+            }
+
+            emptyState.classList.add('hidden');
+            container.innerHTML = '';
+
+            plans.forEach(plan => {
+                const members = LocalStorageDriver.getAll('members');
+                const planMembers = members.filter(m => m.plan_id === plan.id);
+                const activeMembers = planMembers.filter(m => m.status === 'active');
+
+                const planCard = document.createElement('div');
+                planCard.className = 'bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-shadow duration-300';
+                planCard.innerHTML = `
+                    <div class="p-6">
+                        <div class="flex justify-between items-start mb-4">
+                            <h3 class="text-xl font-bold text-gray-900">${plan.name}</h3>
+                            <span class="px-2 py-1 rounded text-xs ${getPlanTypeClass(plan.type)}">
+                                ${getPlanTypeText(plan.type)}
+                            </span>
+                        </div>
+
+                        <div class="text-2xl font-bold text-blue-600 mb-2">
+                            ${Utilities.formatCurrency(plan.price)}
+                        </div>
+
+                        <div class="text-sm text-gray-600 mb-4">
+                            ${plan.duration_days} días • ${activeMembers.length} miembros activos
+                        </div>
+
+                        ${plan.description ? `
+                        <p class="text-gray-700 mb-4 text-sm">${plan.description}</p>
+                        ` : ''}
+
+                        ${plan.features && plan.features.length > 0 ? `
+                        <ul class="space-y-1 mb-4">
+                            ${plan.features.slice(0, 3).map(feature => `
+                                <li class="flex items-center text-sm text-gray-600">
+                                    <i class="fas fa-check text-green-500 mr-2 text-xs"></i>
+                                    ${feature}
+                                </li>
+                            `).join('')}
+                            ${plan.features.length > 3 ? `
+                                <li class="text-sm text-gray-500">+${plan.features.length - 3} más...</li>
+                            ` : ''}
+                        </ul>
+                        ` : ''}
+
+                        <div class="flex justify-between items-center pt-4 border-t border-gray-200">
+                            <span class="text-sm ${plan.active !== false ? 'text-green-600' : 'text-red-600'}">
+                                <i class="fas fa-circle text-xs mr-1"></i>
+                                ${plan.active !== false ? 'Activo' : 'Inactivo'}
+                            </span>
+                            <div class="flex space-x-2">
+                                <button onclick="showPlanDetails('${plan.id}')" class="text-blue-600 hover:text-blue-800" title="Ver detalles">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                                <button onclick="showEditPlanModal('${plan.id}')" class="text-yellow-600 hover:text-yellow-800" title="Editar">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button onclick="deletePlan('${plan.id}')" class="text-red-600 hover:text-red-800" title="Eliminar">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                container.appendChild(planCard);
+            });
+        }
+
+        // Plan Actions
+        document.getElementById('planForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const planData = {
+                name: document.getElementById('planName').value,
+                price: parseInt(document.getElementById('planPrice').value),
+                duration_days: parseInt(document.getElementById('planDuration').value),
+                type: document.getElementById('planType').value,
+                description: document.getElementById('planDescription').value,
+                features: getFeatures(),
+                active: document.getElementById('planActive').checked
+            };
+
+            try {
+                if (editingPlanId) {
+                    LocalStorageDriver.update('plans', editingPlanId, planData);
+                    Utilities.showToast('Plan actualizado exitosamente');
+                } else {
+                    LocalStorageDriver.create('plans', planData);
+                    Utilities.showToast('Plan creado exitosamente');
+                }
+                
+                closeAddPlanModal();
+                loadPlans();
+                loadStats();
+            } catch (error) {
+                Utilities.showToast('Error al guardar el plan', 'error');
+            }
+        });
+
+        function deletePlan(planId) {
+            // Verificar si hay miembros usando este plan
+            const members = LocalStorageDriver.getAll('members');
+            const membersUsingPlan = members.filter(m => m.plan_id === planId);
+            
+            if (membersUsingPlan.length > 0) {
+                Utilities.showToast(`No se puede eliminar: ${membersUsingPlan.length} miembros usan este plan`, 'error');
+                return;
+            }
+
+            if (confirm('¿Estás seguro de que quieres eliminar este plan?')) {
+                LocalStorageDriver.delete('plans', planId);
+                Utilities.showToast('Plan eliminado exitosamente');
+                loadPlans();
+                loadStats();
+            }
+        }
+
+        // Utility Functions
+        function getPlanTypeClass(type) {
+            const classes = {
+                'regular': 'bg-blue-100 text-blue-800',
+                'premium': 'bg-purple-100 text-purple-800',
+                'vip': 'bg-yellow-100 text-yellow-800',
+                'trial': 'bg-green-100 text-green-800'
+            };
+            return classes[type] || 'bg-gray-100 text-gray-800';
+        }
+
+        function getPlanTypeText(type) {
+            const texts = {
+                'regular': 'Regular',
+                'premium': 'Premium',
+                'vip': 'VIP',
+                'trial': 'Prueba'
+            };
+            return texts[type] || type;
+        }
+
+        // Event Listeners
+        document.getElementById('searchInput').addEventListener('input', function() {
+            loadPlans();
+        });
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            loadPlansData();
+        });
+    </script>
+</body>
+</html>

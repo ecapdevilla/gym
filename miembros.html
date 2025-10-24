@@ -1,0 +1,677 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Miembros - PowerGym</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="shared.js"></script>
+</head>
+<body class="bg-gray-100">
+    <!-- Navbar -->
+    <nav class="bg-blue-600 text-white p-4 shadow-lg">
+        <div class="container mx-auto flex justify-between items-center">
+            <div class="flex items-center space-x-4">
+                <a href="dashboard.html" class="text-white hover:text-blue-200">
+                    <i class="fas fa-arrow-left"></i>
+                </a>
+                <h1 class="text-xl font-bold">👥 Gestión de Miembros</h1>
+            </div>
+            <div class="flex items-center space-x-4">
+                <span id="userName" class="hidden md:block"></span>
+                <button onclick="logout()" class="bg-red-500 hover:bg-red-600 px-4 py-2 rounded-lg flex items-center">
+                    <i class="fas fa-sign-out-alt mr-2"></i>
+                    <span class="hidden md:inline">Salir</span>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Mobile Menu -->
+    <div class="bg-blue-500 text-white p-2 md:hidden">
+        <button onclick="goToDashboard()" class="w-full text-left">
+            <i class="fas fa-arrow-left mr-2"></i> Volver al Dashboard
+        </button>
+    </div>
+
+    <!-- Main Content -->
+    <div class="container mx-auto p-4">
+        <!-- Header Stats -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+            <div class="bg-white rounded-lg shadow p-4 text-center">
+                <div class="text-2xl font-bold text-blue-600" id="totalMembers">0</div>
+                <div class="text-gray-600 text-sm">Total Miembros</div>
+            </div>
+            <div class="bg-white rounded-lg shadow p-4 text-center">
+                <div class="text-2xl font-bold text-green-600" id="activeMembers">0</div>
+                <div class="text-gray-600 text-sm">Activos</div>
+            </div>
+            <div class="bg-white rounded-lg shadow p-4 text-center">
+                <div class="text-2xl font-bold text-orange-600" id="inactiveMembers">0</div>
+                <div class="text-gray-600 text-sm">Inactivos</div>
+            </div>
+            <div class="bg-white rounded-lg shadow p-4 text-center">
+                <div class="text-2xl font-bold text-purple-600" id="newThisMonth">0</div>
+                <div class="text-gray-600 text-sm">Nuevos este Mes</div>
+            </div>
+        </div>
+
+        <!-- Action Bar -->
+        <div class="bg-white rounded-lg shadow-lg p-4 mb-6">
+            <div class="flex flex-col md:flex-row md:items-center md:justify-between space-y-4 md:space-y-0">
+                <div class="flex-1">
+                    <div class="relative">
+                        <input type="text" id="searchInput" placeholder="Buscar miembros..." 
+                               class="w-full md:w-64 p-3 border border-gray-300 rounded-lg pl-10">
+                        <i class="fas fa-search absolute left-3 top-3 text-gray-400"></i>
+                    </div>
+                </div>
+                <div class="flex space-x-2">
+                    <button onclick="showFilterModal()" class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg flex items-center">
+                        <i class="fas fa-filter mr-2"></i> Filtrar
+                    </button>
+                    <button onclick="exportMembers()" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg flex items-center">
+                        <i class="fas fa-file-export mr-2"></i> Exportar
+                    </button>
+                    <button onclick="showAddMemberModal()" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center">
+                        <i class="fas fa-user-plus mr-2"></i> Nuevo Miembro
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Members Table -->
+        <div class="bg-white rounded-lg shadow-lg overflow-hidden">
+            <div class="overflow-x-auto">
+                <table class="w-full">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Miembro</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden md:table-cell">Contacto</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Plan</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden lg:table-cell">Estado</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="membersTable" class="bg-white divide-y divide-gray-200">
+                        <!-- Los miembros se cargarán aquí -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Empty State -->
+        <div id="emptyState" class="text-center py-12 hidden">
+            <i class="fas fa-users text-4xl text-gray-300 mb-4"></i>
+            <h3 class="text-lg font-medium text-gray-900">No hay miembros registrados</h3>
+            <p class="text-gray-500 mt-1">Comienza agregando tu primer miembro.</p>
+            <button onclick="showAddMemberModal()" class="mt-4 bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-lg">
+                <i class="fas fa-user-plus mr-2"></i>Agregar Miembro
+            </button>
+        </div>
+    </div>
+
+    <!-- Add Member Modal -->
+    <div id="addMemberModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 hidden">
+        <div class="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <div class="p-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-xl font-bold">Agregar Nuevo Miembro</h3>
+                    <button onclick="closeAddMemberModal()" class="text-gray-400 hover:text-gray-600">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+
+                <form id="addMemberForm" class="space-y-4">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Nombre *</label>
+                            <input type="text" id="memberName" required 
+                                   class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Apellido *</label>
+                            <input type="text" id="memberLastName" required 
+                                   class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Teléfono *</label>
+                            <input type="tel" id="memberPhone" required 
+                                   class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                   placeholder="+57 300 123 4567">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                            <input type="email" id="memberEmail" 
+                                   class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Plan *</label>
+                            <select id="memberPlan" required 
+                                    class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                <option value="">Seleccionar plan...</option>
+                                <!-- Los planes se cargarán aquí -->
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Coach Asignado</label>
+                            <select id="memberCoach" 
+                                    class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                <option value="">Sin coach asignado</option>
+                                <!-- Los coaches se cargarán aquí -->
+                            </select>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Notas/Observaciones</label>
+                        <textarea id="memberNotes" rows="3" 
+                                  class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                  placeholder="Información adicional del miembro..."></textarea>
+                    </div>
+
+                    <div class="flex justify-end space-x-3 pt-4">
+                        <button type="button" onclick="closeAddMemberModal()" 
+                                class="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50">
+                            Cancelar
+                        </button>
+                        <button type="submit" 
+                                class="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 focus:ring-2 focus:ring-blue-500">
+                            Guardar Miembro
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Member Details Modal -->
+    <div id="memberDetailsModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 hidden">
+        <div class="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <div class="p-6">
+                <div class="flex justify-between items-center mb-6">
+                    <h3 class="text-xl font-bold" id="detailMemberName">Detalles del Miembro</h3>
+                    <button onclick="closeMemberDetailsModal()" class="text-gray-400 hover:text-gray-600">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+
+                <div id="memberDetailsContent">
+                    <!-- Los detalles del miembro se cargarán aquí -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filter Modal -->
+    <div id="filterModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 hidden">
+        <div class="bg-white rounded-lg shadow-xl w-full max-w-md">
+            <div class="p-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-xl font-bold">Filtrar Miembros</h3>
+                    <button onclick="closeFilterModal()" class="text-gray-400 hover:text-gray-600">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Estado</label>
+                        <select id="filterStatus" class="w-full p-3 border border-gray-300 rounded-lg">
+                            <option value="">Todos los estados</option>
+                            <option value="active">Activo</option>
+                            <option value="inactive">Inactivo</option>
+                            <option value="suspended">Suspendido</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Plan</label>
+                        <select id="filterPlan" class="w-full p-3 border border-gray-300 rounded-lg">
+                            <option value="">Todos los planes</option>
+                            <!-- Los planes para filtrar se cargarán aquí -->
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Coach</label>
+                        <select id="filterCoach" class="w-full p-3 border border-gray-300 rounded-lg">
+                            <option value="">Todos los coaches</option>
+                            <!-- Los coaches para filtrar se cargarán aquí -->
+                        </select>
+                    </div>
+
+                    <div class="flex justify-end space-x-3 pt-4">
+                        <button onclick="clearFilters()" class="px-4 py-2 text-gray-600 hover:text-gray-800">
+                            Limpiar
+                        </button>
+                        <button onclick="applyFilters()" class="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600">
+                            Aplicar Filtros
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentFilters = {};
+        let allMembers = [];
+
+        function goToDashboard() {
+            window.location.href = 'dashboard.html';
+        }
+
+        function logout() {
+            AuthManager.logout();
+            window.location.href = 'index.html';
+        }
+
+        // Modal Functions
+        function showAddMemberModal() {
+            loadPlansForSelect();
+            loadCoachesForSelect();
+            document.getElementById('addMemberModal').classList.remove('hidden');
+        }
+
+        function closeAddMemberModal() {
+            document.getElementById('addMemberModal').classList.add('hidden');
+            document.getElementById('addMemberForm').reset();
+        }
+
+        function showMemberDetails(memberId) {
+            const member = allMembers.find(m => m.id === memberId);
+            if (!member) return;
+
+            document.getElementById('detailMemberName').textContent = `${member.name} ${member.last_name || ''}`;
+            
+            const plan = LocalStorageDriver.getAll('plans').find(p => p.id === member.plan_id);
+            const coach = LocalStorageDriver.getAll('coaches').find(c => c.id === member.coach_id);
+            const attendance = LocalStorageDriver.getAll('attendance').filter(a => a.member_id === memberId);
+
+            document.getElementById('memberDetailsContent').innerHTML = `
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Información Personal</label>
+                            <div class="mt-2 space-y-2">
+                                <p><strong>Nombre:</strong> ${member.name} ${member.last_name || ''}</p>
+                                <p><strong>Teléfono:</strong> ${member.phone}</p>
+                                <p><strong>Email:</strong> ${member.email || 'No especificado'}</p>
+                                <p><strong>Fecha de registro:</strong> ${Utilities.formatDate(member.created_at)}</p>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Membresía</label>
+                            <div class="mt-2 space-y-2">
+                                <p><strong>Plan:</strong> ${plan ? plan.name : 'No asignado'}</p>
+                                <p><strong>Coach:</strong> ${coach ? coach.name : 'No asignado'}</p>
+                                <p><strong>Estado:</strong> <span class="px-2 py-1 rounded text-xs ${getStatusClass(member.status)}">${getStatusText(member.status)}</span></p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Estadísticas</label>
+                            <div class="mt-2 space-y-2">
+                                <p><strong>Total de visitas:</strong> ${attendance.length}</p>
+                                <p><strong>Última visita:</strong> ${attendance.length > 0 ? Utilities.formatDate(attendance[attendance.length - 1].check_in) : 'Nunca'}</p>
+                                <p><strong>Miembro desde:</strong> ${Utilities.formatDate(member.created_at)}</p>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Acciones Rápidas</label>
+                            <div class="mt-2 space-y-2">
+                                <button onclick="sendWhatsAppMessage('${member.phone}')" class="w-full bg-green-500 text-white p-2 rounded text-sm">
+                                    <i class="fab fa-whatsapp mr-2"></i>Enviar WhatsApp
+                                </button>
+                                <button onclick="registerAttendance('${member.id}')" class="w-full bg-blue-500 text-white p-2 rounded text-sm">
+                                    <i class="fas fa-clipboard-check mr-2"></i>Registrar Asistencia
+                                </button>
+                                <button onclick="editMember('${member.id}')" class="w-full bg-yellow-500 text-white p-2 rounded text-sm">
+                                    <i class="fas fa-edit mr-2"></i>Editar Miembro
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                ${member.notes ? `
+                <div class="mt-6">
+                    <label class="block text-sm font-medium text-gray-700">Notas</label>
+                    <div class="mt-2 p-3 bg-gray-50 rounded-lg">
+                        ${member.notes}
+                    </div>
+                </div>
+                ` : ''}
+            `;
+
+            document.getElementById('memberDetailsModal').classList.remove('hidden');
+        }
+
+        function closeMemberDetailsModal() {
+            document.getElementById('memberDetailsModal').classList.add('hidden');
+        }
+
+        function showFilterModal() {
+            loadPlansForFilter();
+            loadCoachesForFilter();
+            document.getElementById('filterModal').classList.remove('hidden');
+        }
+
+        function closeFilterModal() {
+            document.getElementById('filterModal').classList.add('hidden');
+        }
+
+        // Data Loading
+        function loadMembersData() {
+            const user = AuthManager.getCurrentUser();
+            if (!user) {
+                window.location.href = 'index.html';
+                return;
+            }
+
+            document.getElementById('userName').textContent = `${user.name} ${user.last_name || ''}`;
+            loadMembers();
+            loadStats();
+        }
+
+        function loadMembers() {
+            allMembers = LocalStorageDriver.getAll('members');
+            const filteredMembers = applyCurrentFilters(allMembers);
+            renderMembersTable(filteredMembers);
+        }
+
+        function loadStats() {
+            const members = allMembers;
+            const currentMonth = new Date().getMonth();
+            const currentYear = new Date().getFullYear();
+
+            document.getElementById('totalMembers').textContent = members.length;
+            document.getElementById('activeMembers').textContent = members.filter(m => m.status === 'active').length;
+            document.getElementById('inactiveMembers').textContent = members.filter(m => m.status === 'inactive').length;
+            document.getElementById('newThisMonth').textContent = members.filter(m => {
+                const memberDate = new Date(m.created_at);
+                return memberDate.getMonth() === currentMonth && memberDate.getFullYear() === currentYear;
+            }).length;
+        }
+
+        function loadPlansForSelect() {
+            const plans = LocalStorageDriver.getAll('plans');
+            const select = document.getElementById('memberPlan');
+            select.innerHTML = '<option value="">Seleccionar plan...</option>';
+            
+            plans.forEach(plan => {
+                const option = document.createElement('option');
+                option.value = plan.id;
+                option.textContent = `${plan.name} - ${Utilities.formatCurrency(plan.price)}`;
+                select.appendChild(option);
+            });
+        }
+
+        function loadCoachesForSelect() {
+            const coaches = LocalStorageDriver.getAll('coaches');
+            const select = document.getElementById('memberCoach');
+            select.innerHTML = '<option value="">Sin coach asignado</option>';
+            
+            coaches.forEach(coach => {
+                const option = document.createElement('option');
+                option.value = coach.id;
+                option.textContent = coach.name;
+                select.appendChild(option);
+            });
+        }
+
+        function loadPlansForFilter() {
+            const plans = LocalStorageDriver.getAll('plans');
+            const select = document.getElementById('filterPlan');
+            select.innerHTML = '<option value="">Todos los planes</option>';
+            
+            plans.forEach(plan => {
+                const option = document.createElement('option');
+                option.value = plan.id;
+                option.textContent = plan.name;
+                select.appendChild(option);
+            });
+        }
+
+        function loadCoachesForFilter() {
+            const coaches = LocalStorageDriver.getAll('coaches');
+            const select = document.getElementById('filterCoach');
+            select.innerHTML = '<option value="">Todos los coaches</option>';
+            
+            coaches.forEach(coach => {
+                const option = document.createElement('option');
+                option.value = coach.id;
+                option.textContent = coach.name;
+                select.appendChild(option);
+            });
+        }
+
+        // Render Functions
+        function renderMembersTable(members) {
+            const container = document.getElementById('membersTable');
+            const emptyState = document.getElementById('emptyState');
+
+            if (members.length === 0) {
+                container.innerHTML = '';
+                emptyState.classList.remove('hidden');
+                return;
+            }
+
+            emptyState.classList.add('hidden');
+            container.innerHTML = '';
+
+            members.forEach(member => {
+                const plan = LocalStorageDriver.getAll('plans').find(p => p.id === member.plan_id);
+                const coach = LocalStorageDriver.getAll('coaches').find(c => c.id === member.coach_id);
+                
+                const row = document.createElement('tr');
+                row.className = 'hover:bg-gray-50';
+                row.innerHTML = `
+                    <td class="px-4 py-4 whitespace-nowrap">
+                        <div class="flex items-center">
+                            <div class="flex-shrink-0 h-10 w-10 bg-blue-100 rounded-full flex items-center justify-center">
+                                <i class="fas fa-user text-blue-600"></i>
+                            </div>
+                            <div class="ml-4">
+                                <div class="text-sm font-medium text-gray-900">${member.name} ${member.last_name || ''}</div>
+                                <div class="text-sm text-gray-500">Desde ${Utilities.formatDate(member.created_at)}</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="px-4 py-4 whitespace-nowrap hidden md:table-cell">
+                        <div class="text-sm text-gray-900">${member.phone}</div>
+                        <div class="text-sm text-gray-500">${member.email || 'No email'}</div>
+                    </td>
+                    <td class="px-4 py-4 whitespace-nowrap">
+                        <div class="text-sm text-gray-900">${plan ? plan.name : 'Sin plan'}</div>
+                        <div class="text-sm text-gray-500">${plan ? Utilities.formatCurrency(plan.price) : ''}</div>
+                    </td>
+                    <td class="px-4 py-4 whitespace-nowrap hidden lg:table-cell">
+                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusClass(member.status)}">
+                            ${getStatusText(member.status)}
+                        </span>
+                    </td>
+                    <td class="px-4 py-4 whitespace-nowrap text-sm font-medium">
+                        <div class="flex space-x-2">
+                            <button onclick="showMemberDetails('${member.id}')" class="text-blue-600 hover:text-blue-900" title="Ver detalles">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                            <button onclick="editMember('${member.id}')" class="text-yellow-600 hover:text-yellow-900" title="Editar">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button onclick="sendWhatsAppMessage('${member.phone}')" class="text-green-600 hover:text-green-900" title="Enviar WhatsApp">
+                                <i class="fab fa-whatsapp"></i>
+                            </button>
+                            <button onclick="deleteMember('${member.id}')" class="text-red-600 hover:text-red-900" title="Eliminar">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </td>
+                `;
+                container.appendChild(row);
+            });
+        }
+
+        // Filter Functions
+        function applyCurrentFilters(members) {
+            let filtered = [...members];
+
+            if (currentFilters.status) {
+                filtered = filtered.filter(m => m.status === currentFilters.status);
+            }
+
+            if (currentFilters.plan) {
+                filtered = filtered.filter(m => m.plan_id === currentFilters.plan);
+            }
+
+            if (currentFilters.coach) {
+                filtered = filtered.filter(m => m.coach_id === currentFilters.coach);
+            }
+
+            // Search filter
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            if (searchTerm) {
+                filtered = filtered.filter(m => 
+                    m.name.toLowerCase().includes(searchTerm) ||
+                    (m.last_name && m.last_name.toLowerCase().includes(searchTerm)) ||
+                    m.phone.includes(searchTerm) ||
+                    (m.email && m.email.toLowerCase().includes(searchTerm))
+                );
+            }
+
+            return filtered;
+        }
+
+        function applyFilters() {
+            currentFilters = {
+                status: document.getElementById('filterStatus').value,
+                plan: document.getElementById('filterPlan').value,
+                coach: document.getElementById('filterCoach').value
+            };
+
+            loadMembers();
+            closeFilterModal();
+        }
+
+        function clearFilters() {
+            currentFilters = {};
+            document.getElementById('searchInput').value = '';
+            document.getElementById('filterStatus').value = '';
+            document.getElementById('filterPlan').value = '';
+            document.getElementById('filterCoach').value = '';
+            loadMembers();
+        }
+
+        // Member Actions
+        document.getElementById('addMemberForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const memberData = {
+                name: document.getElementById('memberName').value,
+                last_name: document.getElementById('memberLastName').value,
+                phone: document.getElementById('memberPhone').value,
+                email: document.getElementById('memberEmail').value,
+                plan_id: document.getElementById('memberPlan').value,
+                coach_id: document.getElementById('memberCoach').value || null,
+                notes: document.getElementById('memberNotes').value,
+                status: 'active'
+            };
+
+            if (!Utilities.validatePhone(memberData.phone)) {
+                Utilities.showToast('Número de teléfono inválido', 'error');
+                return;
+            }
+
+            if (memberData.email && !Utilities.validateEmail(memberData.email)) {
+                Utilities.showToast('Email inválido', 'error');
+                return;
+            }
+
+            try {
+                LocalStorageDriver.create('members', memberData);
+                Utilities.showToast('Miembro agregado exitosamente');
+                closeAddMemberModal();
+                loadMembers();
+                loadStats();
+            } catch (error) {
+                Utilities.showToast('Error al agregar miembro', 'error');
+            }
+        });
+
+        function editMember(memberId) {
+            // Implementar edición de miembro
+            Utilities.showToast('Funcionalidad de edición en desarrollo', 'error');
+        }
+
+        function deleteMember(memberId) {
+            if (confirm('¿Estás seguro de que quieres eliminar este miembro?')) {
+                LocalStorageDriver.delete('members', memberId);
+                Utilities.showToast('Miembro eliminado exitosamente');
+                loadMembers();
+                loadStats();
+            }
+        }
+
+        function sendWhatsAppMessage(phone) {
+            const message = `¡Hola! Te contactamos desde PowerGym. ¿Cómo estás? 💪`;
+            WhatsAppManager.sendMessage(phone, message);
+        }
+
+        function registerAttendance(memberId) {
+            const attendanceData = {
+                member_id: memberId,
+                check_in: new Date().toISOString()
+            };
+            
+            LocalStorageDriver.create('attendance', attendanceData);
+            Utilities.showToast('Asistencia registrada exitosamente');
+            closeMemberDetailsModal();
+        }
+
+        // Utility Functions
+        function getStatusClass(status) {
+            const classes = {
+                'active': 'bg-green-100 text-green-800',
+                'inactive': 'bg-red-100 text-red-800',
+                'suspended': 'bg-yellow-100 text-yellow-800'
+            };
+            return classes[status] || 'bg-gray-100 text-gray-800';
+        }
+
+        function getStatusText(status) {
+            const texts = {
+                'active': 'Activo',
+                'inactive': 'Inactivo',
+                'suspended': 'Suspendido'
+            };
+            return texts[status] || status;
+        }
+
+        function exportMembers() {
+            Utilities.showToast('Funcionalidad de exportación en desarrollo', 'error');
+        }
+
+        // Event Listeners
+        document.getElementById('searchInput').addEventListener('input', function() {
+            loadMembers();
+        });
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            loadMembersData();
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,891 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rutinas - PowerGym</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="shared.js"></script>
+</head>
+<body class="bg-gray-100">
+    <!-- Navbar -->
+    <nav class="bg-blue-600 text-white p-4 shadow-lg">
+        <div class="container mx-auto flex justify-between items-center">
+            <div class="flex items-center space-x-4">
+                <a href="dashboard.html" class="text-white hover:text-blue-200">
+                    <i class="fas fa-arrow-left"></i>
+                </a>
+                <h1 class="text-xl font-bold">💪 Gestión de Rutinas</h1>
+            </div>
+            <div class="flex items-center space-x-4">
+                <span id="userName" class="hidden md:block"></span>
+                <button onclick="logout()" class="bg-red-500 hover:bg-red-600 px-4 py-2 rounded-lg flex items-center">
+                    <i class="fas fa-sign-out-alt mr-2"></i>
+                    <span class="hidden md:inline">Salir</span>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Mobile Menu -->
+    <div class="bg-blue-500 text-white p-2 md:hidden">
+        <button onclick="goToDashboard()" class="w-full text-left">
+            <i class="fas fa-arrow-left mr-2"></i> Volver al Dashboard
+        </button>
+    </div>
+
+    <!-- Main Content -->
+    <div class="container mx-auto p-4">
+        <!-- Header Stats -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+            <div class="bg-white rounded-lg shadow p-4 text-center">
+                <div class="text-2xl font-bold text-blue-600" id="totalRoutines">0</div>
+                <div class="text-gray-600 text-sm">Rutinas Activas</div>
+            </div>
+            <div class="bg-white rounded-lg shadow p-4 text-center">
+                <div class="text-2xl font-bold text-green-600" id="assignedRoutines">0</div>
+                <div class="text-gray-600 text-sm">Asignadas</div>
+            </div>
+            <div class="bg-white rounded-lg shadow p-4 text-center">
+                <div class="text-2xl font-bold text-purple-600" id="completedWorkouts">0</div>
+                <div class="text-gray-600 text-sm">Entrenamientos Completados</div>
+            </div>
+            <div class="bg-white rounded-lg shadow p-4 text-center">
+                <div class="text-2xl font-bold text-orange-600" id="pendingWorkouts">0</div>
+                <div class="text-gray-600 text-sm">Pendientes Hoy</div>
+            </div>
+        </div>
+
+        <!-- Action Bar -->
+        <div class="bg-white rounded-lg shadow-lg p-4 mb-6">
+            <div class="flex flex-col md:flex-row md:items-center md:justify-between space-y-4 md:space-y-0">
+                <div class="flex space-x-4">
+                    <button onclick="showRoutineTemplates()" class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg flex items-center">
+                        <i class="fas fa-layer-group mr-2"></i> Plantillas
+                    </button>
+                    <button onclick="showCreateRoutineModal()" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center">
+                        <i class="fas fa-plus mr-2"></i> Nueva Rutina
+                    </button>
+                </div>
+                <div class="flex space-x-2">
+                    <select id="routineFilter" onchange="filterRoutines()" class="p-2 border border-gray-300 rounded-lg">
+                        <option value="all">Todas las rutinas</option>
+                        <option value="assigned">Asignadas a mi</option>
+                        <option value="created">Creadas por mi</option>
+                        <option value="templates">Plantillas</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <!-- Routines Grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6" id="routinesGrid">
+            <!-- Las rutinas se cargarán aquí -->
+        </div>
+
+        <!-- Empty State -->
+        <div id="emptyState" class="text-center py-12 hidden">
+            <i class="fas fa-dumbbell text-4xl text-gray-300 mb-4"></i>
+            <h3 class="text-lg font-medium text-gray-900">No hay rutinas creadas</h3>
+            <p class="text-gray-500 mt-1">Comienza creando tu primera rutina o usando una plantilla.</p>
+            <div class="mt-4 space-x-2">
+                <button onclick="showCreateRoutineModal()" class="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-lg">
+                    <i class="fas fa-plus mr-2"></i>Crear Rutina
+                </button>
+                <button onclick="showRoutineTemplates()" class="bg-gray-500 hover:bg-gray-600 text-white px-6 py-2 rounded-lg">
+                    <i class="fas fa-layer-group mr-2"></i>Ver Plantillas
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Create Routine Modal -->
+    <div id="createRoutineModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 hidden">
+        <div class="bg-white rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+            <div class="p-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-xl font-bold" id="routineModalTitle">Crear Nueva Rutina</h3>
+                    <button onclick="closeCreateRoutineModal()" class="text-gray-400 hover:text-gray-600">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+
+                <form id="routineForm" class="space-y-6">
+                    <!-- Información Básica -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Nombre de la Rutina *</label>
+                            <input type="text" id="routineName" required 
+                                   class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                   placeholder="Ej: Rutina Fuerza Inicial">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Tipo de Rutina *</label>
+                            <select id="routineType" required 
+                                    class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                <option value="">Seleccionar tipo...</option>
+                                <option value="fuerza">Fuerza</option>
+                                <option value="hipertrofia">Hipertrofia</option>
+                                <option value="cardio">Cardio</option>
+                                <option value="funcional">Funcional</option>
+                                <option value="combinado">Combinado</option>
+                                <option value="principiante">Principiante</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Nivel de Dificultad</label>
+                            <select id="routineDifficulty" 
+                                    class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                <option value="principiante">Principiante</option>
+                                <option value="intermedio">Intermedio</option>
+                                <option value="avanzado">Avanzado</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Duración Estimada (min)</label>
+                            <input type="number" id="routineDuration" min="15" max="180"
+                                   class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                   placeholder="60">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Descripción</label>
+                        <textarea id="routineDescription" rows="3"
+                                  class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                  placeholder="Describe el objetivo de esta rutina..."></textarea>
+                    </div>
+
+                    <!-- Ejercicios -->
+                    <div>
+                        <div class="flex justify-between items-center mb-4">
+                            <label class="block text-sm font-medium text-gray-700">Ejercicios</label>
+                            <button type="button" onclick="addExercise()" class="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded text-sm">
+                                <i class="fas fa-plus mr-1"></i>Agregar Ejercicio
+                            </button>
+                        </div>
+                        
+                        <div id="exercisesContainer" class="space-y-4">
+                            <!-- Los ejercicios se agregarán aquí -->
+                        </div>
+                    </div>
+
+                    <!-- Asignación -->
+                    <div id="assignmentSection">
+                        <label class="block text-sm font-medium text-gray-700 mb-3">Asignar a Miembros</label>
+                        <div class="space-y-2 max-h-48 overflow-y-auto border border-gray-200 rounded-lg p-3">
+                            <div id="membersAssignmentList">
+                                <!-- Los miembros para asignar se cargarán aquí -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center space-x-2">
+                        <input type="checkbox" id="isTemplate" class="rounded text-blue-500">
+                        <label for="isTemplate" class="text-sm font-medium text-gray-700">Guardar como plantilla</label>
+                    </div>
+
+                    <div class="flex justify-end space-x-3 pt-4 border-t border-gray-200">
+                        <button type="button" onclick="closeCreateRoutineModal()" 
+                                class="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50">
+                            Cancelar
+                        </button>
+                        <button type="submit" class="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600">
+                            <span id="routineSubmitText">Crear Rutina</span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Routine Details Modal -->
+    <div id="routineDetailsModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 hidden">
+        <div class="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <div class="p-6">
+                <div class="flex justify-between items-center mb-6">
+                    <h3 class="text-xl font-bold" id="detailRoutineName">Detalles de la Rutina</h3>
+                    <button onclick="closeRoutineDetailsModal()" class="text-gray-400 hover:text-gray-600">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+
+                <div id="routineDetailsContent">
+                    <!-- Los detalles de la rutina se cargarán aquí -->
+                </div>
+
+                <div class="mt-6 flex space-x-3">
+                    <button onclick="closeRoutineDetailsModal()" class="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50">
+                        Cerrar
+                    </button>
+                    <button id="editRoutineBtn" class="flex-1 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600">
+                        Editar Rutina
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Templates Modal -->
+    <div id="templatesModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 hidden">
+        <div class="bg-white rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+            <div class="p-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-xl font-bold">Plantillas de Rutinas</h3>
+                    <button onclick="closeTemplatesModal()" class="text-gray-400 hover:text-gray-600">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="templatesGrid">
+                    <!-- Las plantillas se cargarán aquí -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let editingRoutineId = null;
+        let allRoutines = [];
+        const exerciseLibrary = [
+            // Ejercicios de Fuerza
+            { name: "Press de Banca", type: "fuerza", muscle: "pectoral" },
+            { name: "Sentadillas", type: "fuerza", muscle: "piernas" },
+            { name: "Peso Muerto", type: "fuerza", muscle: "espalda" },
+            { name: "Press Militar", type: "fuerza", muscle: "hombros" },
+            { name: "Dominadas", type: "fuerza", muscle: "espalda" },
+            { name: "Fondos en Paralelas", type: "fuerza", muscle: "tríceps" },
+            { name: "Curl de Bíceps", type: "fuerza", muscle: "bíceps" },
+            { name: "Extensiones de Tríceps", type: "fuerza", muscle: "tríceps" },
+            
+            // Ejercicios de Hipertrofia
+            { name: "Press Inclinado con Mancuernas", type: "hipertrofia", muscle: "pectoral" },
+            { name: "Aperturas con Mancuernas", type: "hipertrofia", muscle: "pectoral" },
+            { name: "Remo con Barra", type: "hipertrofia", muscle: "espalda" },
+            { name: "Elevaciones Laterales", type: "hipertrofia", muscle: "hombros" },
+            { name: "Curl Martillo", type: "hipertrofia", muscle: "bíceps" },
+            { name: "Extensión de Cuádriceps", type: "hipertrofia", muscle: "piernas" },
+            { name: "Curl Femoral", type: "hipertrofia", muscle: "piernas" },
+            { name: "Elevaciones de Gemelos", type: "hipertrofia", muscle: "piernas" },
+            
+            // Ejercicios de Cardio
+            { name: "Correr en Cinta", type: "cardio", muscle: "cardiovascular" },
+            { name: "Elíptica", type: "cardio", muscle: "cardiovascular" },
+            { name: "Bicicleta Estática", type: "cardio", muscle: "cardiovascular" },
+            { name: "Salto de Cuerda", type: "cardio", muscle: "cardiovascular" },
+            { name: "Burpees", type: "cardio", muscle: "full body" },
+            
+            // Ejercicios Funcionales
+            { name: "Plancha", type: "funcional", muscle: "core" },
+            { name: "Russian Twist", type: "funcional", muscle: "core" },
+            { name: "Bird Dog", type: "funcional", muscle: "core" },
+            { name: "Sentadilla con Salto", type: "funcional", muscle: "piernas" },
+            { name: "Flexiones", type: "funcional", muscle: "pectoral" }
+        ];
+
+        function goToDashboard() {
+            window.location.href = 'dashboard.html';
+        }
+
+        function logout() {
+            AuthManager.logout();
+            window.location.href = 'index.html';
+        }
+
+        // Modal Functions
+        function showCreateRoutineModal() {
+            editingRoutineId = null;
+            document.getElementById('routineModalTitle').textContent = 'Crear Nueva Rutina';
+            document.getElementById('routineSubmitText').textContent = 'Crear Rutina';
+            document.getElementById('routineForm').reset();
+            document.getElementById('exercisesContainer').innerHTML = '';
+            document.getElementById('isTemplate').checked = false;
+            
+            // Agregar primer ejercicio
+            addExercise();
+            loadMembersForAssignment();
+            
+            document.getElementById('createRoutineModal').classList.remove('hidden');
+        }
+
+        function closeCreateRoutineModal() {
+            document.getElementById('createRoutineModal').classList.add('hidden');
+            editingRoutineId = null;
+        }
+
+        function showRoutineDetails(routineId) {
+            const routine = allRoutines.find(r => r.id === routineId);
+            if (!routine) return;
+
+            document.getElementById('detailRoutineName').textContent = routine.name;
+            
+            const assignedMembers = routine.assigned_to || [];
+            const members = LocalStorageDriver.getAll('members');
+            const assignedMembersInfo = members.filter(m => assignedMembers.includes(m.id));
+
+            document.getElementById('routineDetailsContent').innerHTML = `
+                <div class="space-y-6">
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="text-center p-3 bg-blue-50 rounded-lg">
+                            <div class="text-2xl font-bold text-blue-600">${routine.exercises ? routine.exercises.length : 0}</div>
+                            <div class="text-sm text-gray-600">Ejercicios</div>
+                        </div>
+                        <div class="text-center p-3 bg-green-50 rounded-lg">
+                            <div class="text-2xl font-bold text-green-600">${assignedMembers.length}</div>
+                            <div class="text-sm text-gray-600">Miembros Asignados</div>
+                        </div>
+                    </div>
+
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Información de la Rutina</label>
+                            <div class="mt-2 space-y-2 text-sm">
+                                <p><strong>Tipo:</strong> ${getRoutineTypeText(routine.type)}</p>
+                                <p><strong>Dificultad:</strong> ${getDifficultyText(routine.difficulty)}</p>
+                                <p><strong>Duración:</strong> ${routine.duration || 'No especificada'} minutos</p>
+                                <p><strong>Creada por:</strong> ${routine.created_by || 'Sistema'}</p>
+                            </div>
+                        </div>
+
+                        ${routine.description ? `
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Descripción</label>
+                            <p class="mt-1 text-sm text-gray-600">${routine.description}</p>
+                        </div>
+                        ` : ''}
+
+                        ${routine.exercises && routine.exercises.length > 0 ? `
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Ejercicios</label>
+                            <div class="space-y-2">
+                                ${routine.exercises.map((exercise, index) => `
+                                    <div class="border border-gray-200 rounded-lg p-3">
+                                        <div class="flex justify-between items-start mb-2">
+                                            <h4 class="font-medium">${index + 1}. ${exercise.name}</h4>
+                                            <span class="px-2 py-1 bg-gray-100 text-gray-600 rounded text-xs">${exercise.muscle}</span>
+                                        </div>
+                                        <div class="grid grid-cols-3 gap-2 text-sm text-gray-600">
+                                            <div>Series: ${exercise.sets}</div>
+                                            <div>Reps: ${exercise.reps}</div>
+                                            <div>Descanso: ${exercise.rest}s</div>
+                                        </div>
+                                        ${exercise.notes ? `<p class="text-sm text-gray-500 mt-1">${exercise.notes}</p>` : ''}
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                        ` : ''}
+
+                        ${assignedMembersInfo.length > 0 ? `
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Miembros Asignados</label>
+                            <div class="space-y-1">
+                                ${assignedMembersInfo.map(member => `
+                                    <div class="flex items-center space-x-2 p-2 bg-gray-50 rounded">
+                                        <div class="bg-blue-100 text-blue-600 w-6 h-6 rounded-full flex items-center justify-center text-xs">
+                                            <i class="fas fa-user"></i>
+                                        </div>
+                                        <span class="text-sm">${member.name} ${member.last_name || ''}</span>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                        ` : ''}
+                    </div>
+                </div>
+            `;
+
+            document.getElementById('editRoutineBtn').onclick = () => {
+                closeRoutineDetailsModal();
+                editRoutine(routineId);
+            };
+
+            document.getElementById('routineDetailsModal').classList.remove('hidden');
+        }
+
+        function closeRoutineDetailsModal() {
+            document.getElementById('routineDetailsModal').classList.add('hidden');
+        }
+
+        function showRoutineTemplates() {
+            loadTemplates();
+            document.getElementById('templatesModal').classList.remove('hidden');
+        }
+
+        function closeTemplatesModal() {
+            document.getElementById('templatesModal').classList.add('hidden');
+        }
+
+        // Exercise Management
+        function addExercise(exerciseData = {}) {
+            const container = document.getElementById('exercisesContainer');
+            const exerciseId = Utilities.generateId();
+            
+            const exerciseDiv = document.createElement('div');
+            exerciseDiv.className = 'border border-gray-200 rounded-lg p-4 exercise-item';
+            exerciseDiv.innerHTML = `
+                <div class="flex justify-between items-start mb-3">
+                    <h4 class="font-medium text-gray-700">Nuevo Ejercicio</h4>
+                    <button type="button" onclick="removeExercise(this)" class="text-red-500 hover:text-red-700">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-3">
+                    <div>
+                        <label class="block text-sm text-gray-600 mb-1">Ejercicio *</label>
+                        <select class="w-full p-2 border border-gray-300 rounded exercise-name" required>
+                            <option value="">Seleccionar ejercicio...</option>
+                            ${exerciseLibrary.map(ex => 
+                                `<option value="${ex.name}" data-type="${ex.type}" data-muscle="${ex.muscle}" ${exerciseData.name === ex.name ? 'selected' : ''}>${ex.name}</option>`
+                            ).join('')}
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm text-gray-600 mb-1">Grupo Muscular</label>
+                        <input type="text" class="w-full p-2 border border-gray-300 rounded exercise-muscle" readonly
+                               value="${exerciseData.muscle || ''}">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-2 mb-3">
+                    <div>
+                        <label class="block text-sm text-gray-600 mb-1">Series *</label>
+                        <input type="number" class="w-full p-2 border border-gray-300 rounded exercise-sets" min="1" max="10" 
+                               value="${exerciseData.sets || 3}" required>
+                    </div>
+                    <div>
+                        <label class="block text-sm text-gray-600 mb-1">Repeticiones *</label>
+                        <input type="text" class="w-full p-2 border border-gray-300 rounded exercise-reps" 
+                               value="${exerciseData.reps || '8-12'}" required>
+                    </div>
+                    <div>
+                        <label class="block text-sm text-gray-600 mb-1">Descanso (seg)</label>
+                        <input type="number" class="w-full p-2 border border-gray-300 rounded exercise-rest" min="0" max="300"
+                               value="${exerciseData.rest || 60}">
+                    </div>
+                    <div>
+                        <label class="block text-sm text-gray-600 mb-1">Peso (kg)</label>
+                        <input type="text" class="w-full p-2 border border-gray-300 rounded exercise-weight"
+                               value="${exerciseData.weight || ''}" placeholder="Opcional">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-sm text-gray-600 mb-1">Notas</label>
+                    <textarea class="w-full p-2 border border-gray-300 rounded exercise-notes" rows="2" 
+                              placeholder="Técnica, variaciones...">${exerciseData.notes || ''}</textarea>
+                </div>
+            `;
+            
+            // Agregar evento para actualizar grupo muscular automáticamente
+            const exerciseSelect = exerciseDiv.querySelector('.exercise-name');
+            const muscleInput = exerciseDiv.querySelector('.exercise-muscle');
+            
+            exerciseSelect.addEventListener('change', function() {
+                const selectedOption = this.options[this.selectedIndex];
+                muscleInput.value = selectedOption.getAttribute('data-muscle') || '';
+            });
+
+            container.appendChild(exerciseDiv);
+        }
+
+        function removeExercise(button) {
+            const container = document.getElementById('exercisesContainer');
+            if (container.children.length > 1) {
+                button.closest('.exercise-item').remove();
+            }
+        }
+
+        function getExercisesData() {
+            const exerciseItems = document.querySelectorAll('.exercise-item');
+            const exercises = [];
+            
+            exerciseItems.forEach(item => {
+                const name = item.querySelector('.exercise-name').value;
+                const sets = parseInt(item.querySelector('.exercise-sets').value);
+                const reps = item.querySelector('.exercise-reps').value;
+                const rest = parseInt(item.querySelector('.exercise-rest').value) || 60;
+                const weight = item.querySelector('.exercise-weight').value;
+                const notes = item.querySelector('.exercise-notes').value;
+                const muscle = item.querySelector('.exercise-muscle').value;
+                
+                if (name && sets && reps) {
+                    exercises.push({
+                        name,
+                        sets,
+                        reps,
+                        rest,
+                        weight,
+                        notes,
+                        muscle
+                    });
+                }
+            });
+            
+            return exercises;
+        }
+
+        // Member Assignment
+        function loadMembersForAssignment() {
+            const members = LocalStorageDriver.getAll('members').filter(m => m.status === 'active');
+            const container = document.getElementById('membersAssignmentList');
+            
+            container.innerHTML = members.map(member => `
+                <div class="flex items-center space-x-3 p-2 hover:bg-gray-50 rounded">
+                    <input type="checkbox" id="member_${member.id}" value="${member.id}" 
+                           class="rounded text-blue-500 member-checkbox">
+                    <label for="member_${member.id}" class="flex-1 cursor-pointer">
+                        <span class="font-medium">${member.name} ${member.last_name || ''}</span>
+                        <span class="text-sm text-gray-500 ml-2">${member.phone}</span>
+                    </label>
+                </div>
+            `).join('');
+        }
+
+        function getAssignedMembers() {
+            const checkboxes = document.querySelectorAll('.member-checkbox:checked');
+            return Array.from(checkboxes).map(cb => cb.value);
+        }
+
+        // Data Loading
+        function loadRoutinesData() {
+            const user = AuthManager.getCurrentUser();
+            if (!user) {
+                window.location.href = 'index.html';
+                return;
+            }
+
+            document.getElementById('userName').textContent = `${user.name} ${user.last_name || ''}`;
+            loadRoutines();
+            loadStats();
+        }
+
+        function loadRoutines() {
+            allRoutines = LocalStorageDriver.getAll('routines');
+            const filter = document.getElementById('routineFilter').value;
+            let filteredRoutines = allRoutines;
+
+            const currentUser = AuthManager.getCurrentUser();
+            
+            if (filter === 'assigned' && currentUser.role === 'member') {
+                filteredRoutines = allRoutines.filter(r => 
+                    r.assigned_to && r.assigned_to.includes(currentUser.id)
+                );
+            } else if (filter === 'created') {
+                filteredRoutines = allRoutines.filter(r => r.created_by === currentUser.id);
+            } else if (filter === 'templates') {
+                filteredRoutines = allRoutines.filter(r => r.is_template);
+            }
+
+            renderRoutinesGrid(filteredRoutines);
+        }
+
+        function loadStats() {
+            const routines = allRoutines;
+            const currentUser = AuthManager.getCurrentUser();
+            
+            document.getElementById('totalRoutines').textContent = routines.length;
+
+            // Rutinas asignadas al usuario actual
+            if (currentUser.role === 'member') {
+                const assignedRoutines = routines.filter(r => 
+                    r.assigned_to && r.assigned_to.includes(currentUser.id)
+                );
+                document.getElementById('assignedRoutines').textContent = assignedRoutines.length;
+            } else {
+                document.getElementById('assignedRoutines').textContent = routines.filter(r => 
+                    r.assigned_to && r.assigned_to.length > 0
+                ).length;
+            }
+
+            // Estadísticas de entrenamientos (simplificado)
+            document.getElementById('completedWorkouts').textContent = '0';
+            document.getElementById('pendingWorkouts').textContent = '0';
+        }
+
+        // Render Functions
+        function renderRoutinesGrid(routines) {
+            const container = document.getElementById('routinesGrid');
+            const emptyState = document.getElementById('emptyState');
+
+            if (routines.length === 0) {
+                container.innerHTML = '';
+                emptyState.classList.remove('hidden');
+                return;
+            }
+
+            emptyState.classList.add('hidden');
+            container.innerHTML = '';
+
+            routines.forEach(routine => {
+                const assignedCount = routine.assigned_to ? routine.assigned_to.length : 0;
+                const exerciseCount = routine.exercises ? routine.exercises.length : 0;
+
+                const routineCard = document.createElement('div');
+                routineCard.className = 'bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-shadow duration-300';
+                routineCard.innerHTML = `
+                    <div class="p-6">
+                        <div class="flex justify-between items-start mb-3">
+                            <h3 class="text-lg font-bold text-gray-900">${routine.name}</h3>
+                            <span class="px-2 py-1 rounded text-xs ${getRoutineTypeClass(routine.type)}">
+                                ${getRoutineTypeText(routine.type)}
+                            </span>
+                        </div>
+
+                        <div class="flex items-center space-x-4 text-sm text-gray-600 mb-3">
+                            <span class="flex items-center">
+                                <i class="fas fa-dumbbell mr-1"></i>
+                                ${exerciseCount} ejercicios
+                            </span>
+                            <span class="flex items-center">
+                                <i class="fas fa-users mr-1"></i>
+                                ${assignedCount} asignados
+                            </span>
+                            ${routine.duration ? `
+                            <span class="flex items-center">
+                                <i class="fas fa-clock mr-1"></i>
+                                ${routine.duration} min
+                            </span>
+                            ` : ''}
+                        </div>
+
+                        ${routine.description ? `
+                        <p class="text-gray-700 text-sm mb-4 line-clamp-2">${routine.description}</p>
+                        ` : ''}
+
+                        <div class="flex justify-between items-center pt-4 border-t border-gray-200">
+                            <span class="text-sm ${getDifficultyClass(routine.difficulty)}">
+                                ${getDifficultyText(routine.difficulty)}
+                            </span>
+                            <div class="flex space-x-2">
+                                <button onclick="showRoutineDetails('${routine.id}')" class="text-blue-600 hover:text-blue-800" title="Ver detalles">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                                ${!routine.is_template ? `
+                                <button onclick="editRoutine('${routine.id}')" class="text-yellow-600 hover:text-yellow-800" title="Editar">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button onclick="assignRoutine('${routine.id}')" class="text-green-600 hover:text-green-800" title="Asignar">
+                                    <i class="fas fa-user-plus"></i>
+                                </button>
+                                ` : ''}
+                                <button onclick="deleteRoutine('${routine.id}')" class="text-red-600 hover:text-red-800" title="Eliminar">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                container.appendChild(routineCard);
+            });
+        }
+
+        function loadTemplates() {
+            const templates = allRoutines.filter(r => r.is_template);
+            const container = document.getElementById('templatesGrid');
+            
+            if (templates.length === 0) {
+                container.innerHTML = `
+                    <div class="col-span-2 text-center py-8">
+                        <i class="fas fa-layer-group text-4xl text-gray-300 mb-4"></i>
+                        <h3 class="text-lg font-medium text-gray-900">No hay plantillas disponibles</h3>
+                        <p class="text-gray-500">Crea tu primera plantilla marcando "Guardar como plantilla" al crear una rutina.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = templates.map(template => `
+                <div class="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+                    <h4 class="font-bold text-lg mb-2">${template.name}</h4>
+                    <div class="text-sm text-gray-600 mb-3">
+                        <span class="inline-block px-2 py-1 bg-gray-100 rounded mr-2">${getRoutineTypeText(template.type)}</span>
+                        <span class="inline-block px-2 py-1 bg-gray-100 rounded">${getDifficultyText(template.difficulty)}</span>
+                    </div>
+                    <p class="text-sm text-gray-700 mb-3">${template.description || 'Sin descripción'}</p>
+                    <div class="text-sm text-gray-500 mb-3">
+                        <i class="fas fa-dumbbell mr-1"></i>
+                        ${template.exercises ? template.exercises.length : 0} ejercicios
+                    </div>
+                    <button onclick="useTemplate('${template.id}')" class="w-full bg-blue-500 hover:bg-blue-600 text-white py-2 rounded text-sm">
+                        <i class="fas fa-copy mr-1"></i>Usar Plantilla
+                    </button>
+                </div>
+            `).join('');
+        }
+
+        // Routine Actions
+        document.getElementById('routineForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const currentUser = AuthManager.getCurrentUser();
+            const routineData = {
+                name: document.getElementById('routineName').value,
+                type: document.getElementById('routineType').value,
+                difficulty: document.getElementById('routineDifficulty').value,
+                duration: parseInt(document.getElementById('routineDuration').value) || null,
+                description: document.getElementById('routineDescription').value,
+                exercises: getExercisesData(),
+                assigned_to: getAssignedMembers(),
+                is_template: document.getElementById('isTemplate').checked,
+                created_by: currentUser.id
+            };
+
+            try {
+                if (editingRoutineId) {
+                    LocalStorageDriver.update('routines', editingRoutineId, routineData);
+                    Utilities.showToast('Rutina actualizada exitosamente');
+                } else {
+                    LocalStorageDriver.create('routines', routineData);
+                    Utilities.showToast('Rutina creada exitosamente');
+                }
+                
+                closeCreateRoutineModal();
+                loadRoutines();
+                loadStats();
+            } catch (error) {
+                Utilities.showToast('Error al guardar la rutina', 'error');
+            }
+        });
+
+        function editRoutine(routineId) {
+            const routine = allRoutines.find(r => r.id === routineId);
+            if (!routine) return;
+
+            editingRoutineId = routineId;
+            document.getElementById('routineModalTitle').textContent = 'Editar Rutina';
+            document.getElementById('routineSubmitText').textContent = 'Actualizar Rutina';
+            
+            // Llenar formulario con datos de la rutina
+            document.getElementById('routineName').value = routine.name;
+            document.getElementById('routineType').value = routine.type;
+            document.getElementById('routineDifficulty').value = routine.difficulty;
+            document.getElementById('routineDuration').value = routine.duration || '';
+            document.getElementById('routineDescription').value = routine.description || '';
+            document.getElementById('isTemplate').checked = routine.is_template || false;
+
+            // Limpiar y llenar ejercicios
+            document.getElementById('exercisesContainer').innerHTML = '';
+            if (routine.exercises && routine.exercises.length > 0) {
+                routine.exercises.forEach(exercise => {
+                    addExercise(exercise);
+                });
+            } else {
+                addExercise();
+            }
+
+            // Cargar asignación de miembros
+            loadMembersForAssignment();
+            if (routine.assigned_to) {
+                routine.assigned_to.forEach(memberId => {
+                    const checkbox = document.getElementById(`member_${memberId}`);
+                    if (checkbox) checkbox.checked = true;
+                });
+            }
+
+            document.getElementById('createRoutineModal').classList.remove('hidden');
+        }
+
+        function useTemplate(templateId) {
+            const template = allRoutines.find(r => r.id === templateId);
+            if (!template) return;
+
+            editingRoutineId = null;
+            document.getElementById('routineModalTitle').textContent = 'Crear Rutina desde Plantilla';
+            document.getElementById('routineSubmitText').textContent = 'Crear Rutina';
+            
+            // Llenar formulario con datos de la plantilla
+            document.getElementById('routineName').value = `${template.name} (Copia)`;
+            document.getElementById('routineType').value = template.type;
+            document.getElementById('routineDifficulty').value = template.difficulty;
+            document.getElementById('routineDuration').value = template.duration || '';
+            document.getElementById('routineDescription').value = template.description || '';
+            document.getElementById('isTemplate').checked = false;
+
+            // Limpiar y llenar ejercicios
+            document.getElementById('exercisesContainer').innerHTML = '';
+            if (template.exercises && template.exercises.length > 0) {
+                template.exercises.forEach(exercise => {
+                    addExercise(exercise);
+                });
+            } else {
+                addExercise();
+            }
+
+            loadMembersForAssignment();
+            closeTemplatesModal();
+            document.getElementById('createRoutineModal').classList.remove('hidden');
+        }
+
+        function assignRoutine(routineId) {
+            Utilities.showToast('Funcionalidad de asignación en desarrollo', 'error');
+        }
+
+        function deleteRoutine(routineId) {
+            if (confirm('¿Estás seguro de que quieres eliminar esta rutina?')) {
+                LocalStorageDriver.delete('routines', routineId);
+                Utilities.showToast('Rutina eliminada exitosamente');
+                loadRoutines();
+                loadStats();
+            }
+        }
+
+        // Utility Functions
+        function getRoutineTypeClass(type) {
+            const classes = {
+                'fuerza': 'bg-red-100 text-red-800',
+                'hipertrofia': 'bg-blue-100 text-blue-800',
+                'cardio': 'bg-green-100 text-green-800',
+                'funcional': 'bg-purple-100 text-purple-800',
+                'combinado': 'bg-yellow-100 text-yellow-800',
+                'principiante': 'bg-gray-100 text-gray-800'
+            };
+            return classes[type] || 'bg-gray-100 text-gray-800';
+        }
+
+        function getRoutineTypeText(type) {
+            const texts = {
+                'fuerza': 'Fuerza',
+                'hipertrofia': 'Hipertrofia',
+                'cardio': 'Cardio',
+                'funcional': 'Funcional',
+                'combinado': 'Combinado',
+                'principiante': 'Principiante'
+            };
+            return texts[type] || type;
+        }
+
+        function getDifficultyClass(difficulty) {
+            const classes = {
+                'principiante': 'text-green-600',
+                'intermedio': 'text-yellow-600',
+                'avanzado': 'text-red-600'
+            };
+            return classes[difficulty] || 'text-gray-600';
+        }
+
+        function getDifficultyText(difficulty) {
+            const texts = {
+                'principiante': 'Principiante',
+                'intermedio': 'Intermedio',
+                'avanzado': 'Avanzado'
+            };
+            return texts[difficulty] || difficulty;
+        }
+
+        function filterRoutines() {
+            loadRoutines();
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            loadRoutinesData();
+        });
+    </script>
+</body>
+</html>
