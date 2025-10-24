@@ -1,0 +1,995 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Recordatorios - PowerGym</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="shared.js"></script>
+</head>
+<body class="bg-gray-100">
+    <!-- Navbar -->
+    <nav class="bg-blue-600 text-white p-4 shadow-lg">
+        <div class="container mx-auto flex justify-between items-center">
+            <div class="flex items-center space-x-4">
+                <a href="dashboard.html" class="text-white hover:text-blue-200">
+                    <i class="fas fa-arrow-left"></i>
+                </a>
+                <h1 class="text-xl font-bold">🔔 Sistema de Recordatorios</h1>
+            </div>
+            <div class="flex items-center space-x-4">
+                <span id="userName" class="hidden md:block"></span>
+                <button onclick="logout()" class="bg-red-500 hover:bg-red-600 px-4 py-2 rounded-lg flex items-center">
+                    <i class="fas fa-sign-out-alt mr-2"></i>
+                    <span class="hidden md:inline">Salir</span>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Mobile Menu -->
+    <div class="bg-blue-500 text-white p-2 md:hidden">
+        <button onclick="goToDashboard()" class="w-full text-left">
+            <i class="fas fa-arrow-left mr-2"></i> Volver al Dashboard
+        </button>
+    </div>
+
+    <!-- Main Content -->
+    <div class="container mx-auto p-4">
+        <!-- Header Stats -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+            <div class="bg-white rounded-lg shadow p-4 text-center">
+                <div class="text-2xl font-bold text-orange-600" id="pendingReminders">0</div>
+                <div class="text-gray-600 text-sm">Pendientes Hoy</div>
+            </div>
+            <div class="bg-white rounded-lg shadow p-4 text-center">
+                <div class="text-2xl font-bold text-blue-600" id="inactiveMembers">0</div>
+                <div class="text-gray-600 text-sm">Miembros Inactivos</div>
+            </div>
+            <div class="bg-white rounded-lg shadow p-4 text-center">
+                <div class="text-2xl font-bold text-red-600" id="pendingPayments">0</div>
+                <div class="text-gray-600 text-sm">Pagos Pendientes</div>
+            </div>
+            <div class="bg-white rounded-lg shadow p-4 text-center">
+                <div class="text-2xl font-bold text-green-600" id="sentToday">0</div>
+                <div class="text-gray-600 text-sm">Enviados Hoy</div>
+            </div>
+        </div>
+
+        <!-- Action Bar -->
+        <div class="bg-white rounded-lg shadow-lg p-4 mb-6">
+            <div class="flex flex-col md:flex-row md:items-center md:justify-between space-y-4 md:space-y-0">
+                <div class="flex space-x-4">
+                    <button onclick="showSendBulkModal()" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center">
+                        <i class="fas fa-paper-plane mr-2"></i> Envío Masivo
+                    </button>
+                    <button onclick="showTemplateManager()" class="bg-purple-500 hover:bg-purple-600 text-white px-4 py-2 rounded-lg flex items-center">
+                        <i class="fas fa-edit mr-2"></i> Gestionar Plantillas
+                    </button>
+                    <button onclick="sendAutomaticReminders()" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg flex items-center">
+                        <i class="fas fa-robot mr-2"></i> Recordatorios Automáticos
+                    </button>
+                </div>
+                <div class="flex space-x-2">
+                    <select id="reminderFilter" onchange="loadReminders()" class="p-2 border border-gray-300 rounded-lg">
+                        <option value="all">Todos los recordatorios</option>
+                        <option value="pending">Pendientes</option>
+                        <option value="sent">Enviados</option>
+                        <option value="scheduled">Programados</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+            <!-- Inactive Members -->
+            <div class="bg-white rounded-lg shadow-lg p-4">
+                <div class="flex items-center justify-between mb-3">
+                    <h3 class="font-bold text-gray-800">👥 Miembros Inactivos</h3>
+                    <span class="bg-orange-100 text-orange-800 px-2 py-1 rounded-full text-xs" id="inactiveCount">0</span>
+                </div>
+                <p class="text-sm text-gray-600 mb-3">Miembros que no han asistido en 15+ días</p>
+                <button onclick="showInactiveMembers()" class="w-full bg-orange-500 hover:bg-orange-600 text-white py-2 rounded-lg text-sm">
+                    <i class="fas fa-eye mr-2"></i>Ver Miembros
+                </button>
+            </div>
+
+            <!-- Pending Payments -->
+            <div class="bg-white rounded-lg shadow-lg p-4">
+                <div class="flex items-center justify-between mb-3">
+                    <h3 class="font-bold text-gray-800">💳 Pagos Pendientes</h3>
+                    <span class="bg-red-100 text-red-800 px-2 py-1 rounded-full text-xs" id="paymentsCount">0</span>
+                </div>
+                <p class="text-sm text-gray-600 mb-3">Miembros con pagos vencidos</p>
+                <button onclick="showPendingPayments()" class="w-full bg-red-500 hover:bg-red-600 text-white py-2 rounded-lg text-sm">
+                    <i class="fas fa-eye mr-2"></i>Ver Pagos
+                </button>
+            </div>
+
+            <!-- Birthdays -->
+            <div class="bg-white rounded-lg shadow-lg p-4">
+                <div class="flex items-center justify-between mb-3">
+                    <h3 class="font-bold text-gray-800">🎂 Cumpleaños</h3>
+                    <span class="bg-pink-100 text-pink-800 px-2 py-1 rounded-full text-xs" id="birthdaysCount">0</span>
+                </div>
+                <p class="text-sm text-gray-600 mb-3">Cumpleaños este mes</p>
+                <button onclick="showBirthdays()" class="w-full bg-pink-500 hover:bg-pink-600 text-white py-2 rounded-lg text-sm">
+                    <i class="fas fa-eye mr-2"></i>Ver Cumpleaños
+                </button>
+            </div>
+
+            <!-- Promotions -->
+            <div class="bg-white rounded-lg shadow-lg p-4">
+                <div class="flex items-center justify-between mb-3">
+                    <h3 class="font-bold text-gray-800">🎯 Promociones</h3>
+                    <span class="bg-purple-100 text-purple-800 px-2 py-1 rounded-full text-xs" id="promotionsCount">0</span>
+                </div>
+                <p class="text-sm text-gray-600 mb-3">Enviar promociones especiales</p>
+                <button onclick="showPromotions()" class="w-full bg-purple-500 hover:bg-purple-600 text-white py-2 rounded-lg text-sm">
+                    <i class="fas fa-bullhorn mr-2"></i>Crear Promoción
+                </button>
+            </div>
+        </div>
+
+        <!-- Reminders List -->
+        <div class="bg-white rounded-lg shadow-lg p-6">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-bold">Historial de Recordatorios</h3>
+                <button onclick="loadReminders()" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg">
+                    <i class="fas fa-refresh mr-2"></i>Actualizar
+                </button>
+            </div>
+
+            <div class="overflow-x-auto">
+                <table class="w-full">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fecha</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tipo</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Destinatario</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Mensaje</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Estado</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="remindersTable" class="bg-white divide-y divide-gray-200">
+                        <!-- Los recordatorios se cargarán aquí -->
+                    </tbody>
+                </table>
+            </div>
+
+            <div id="emptyReminders" class="text-center py-8 hidden">
+                <i class="fas fa-bell text-4xl text-gray-300 mb-4"></i>
+                <h3 class="text-lg font-medium text-gray-900">No hay recordatorios</h3>
+                <p class="text-gray-500">Los recordatorios enviados aparecerán aquí.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Send Bulk Modal -->
+    <div id="sendBulkModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 hidden">
+        <div class="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <div class="p-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-xl font-bold">Envío Masivo de Mensajes</h3>
+                    <button onclick="closeSendBulkModal()" class="text-gray-400 hover:text-gray-600">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+
+                <form id="bulkMessageForm" class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Seleccionar Grupo</label>
+                        <select id="bulkGroup" required 
+                                class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                            <option value="">Seleccionar grupo...</option>
+                            <option value="all_members">Todos los miembros activos</option>
+                            <option value="inactive_7">Inactivos 7+ días</option>
+                            <option value="inactive_15">Inactivos 15+ días</option>
+                            <option value="inactive_30">Inactivos 30+ días</option>
+                            <option value="pending_payments">Pagos pendientes</option>
+                            <option value="birthdays">Cumpleaños este mes</option>
+                            <option value="specific_plan">Por plan específico</option>
+                        </select>
+                    </div>
+
+                    <div id="specificPlanSection" class="hidden">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Seleccionar Plan</label>
+                        <select id="specificPlan" class="w-full p-3 border border-gray-300 rounded-lg">
+                            <!-- Los planes se cargarán aquí -->
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Plantilla de Mensaje</label>
+                        <select id="bulkTemplate" onchange="loadTemplateContent()" 
+                                class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                            <option value="">Seleccionar plantilla...</option>
+                            <option value="inactivity_7">Inactividad 7 días</option>
+                            <option value="inactivity_15">Inactividad 15 días</option>
+                            <option value="inactivity_30">Inactividad 30 días</option>
+                            <option value="payment_reminder">Recordatorio de pago</option>
+                            <option value="birthday">Felicitación cumpleaños</option>
+                            <option value="promotion">Promoción especial</option>
+                            <option value="custom">Personalizado</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Mensaje Personalizado</label>
+                        <textarea id="bulkMessage" rows="6" required
+                                  class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                  placeholder="Escribe tu mensaje personalizado aquí..."></textarea>
+                    </div>
+
+                    <div class="bg-blue-50 p-3 rounded-lg">
+                        <h4 class="font-bold text-sm mb-2">Variables Disponibles:</h4>
+                        <div class="grid grid-cols-2 gap-2 text-xs">
+                            <code class="bg-white p-1 rounded cursor-pointer" onclick="insertVariable('{nombre}')">{nombre}</code>
+                            <code class="bg-white p-1 rounded cursor-pointer" onclick="insertVariable('{plan}')">{plan}</code>
+                            <code class="bg-white p-1 rounded cursor-pointer" onclick="insertVariable('{dias_inactivo}')">{dias_inactivo}</code>
+                            <code class="bg-white p-1 rounded cursor-pointer" onclick="insertVariable('{fecha_pago}')">{fecha_pago}</code>
+                        </div>
+                    </div>
+
+                    <div id="bulkPreview" class="bg-gray-50 p-4 rounded-lg hidden">
+                        <h4 class="font-bold text-sm mb-2">Vista Previa:</h4>
+                        <p id="previewMessage" class="text-sm text-gray-700"></p>
+                        <p class="text-xs text-gray-500 mt-2">Destinatarios: <span id="previewCount">0</span></p>
+                    </div>
+
+                    <div class="flex justify-end space-x-3 pt-4">
+                        <button type="button" onclick="closeSendBulkModal()" 
+                                class="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50">
+                            Cancelar
+                        </button>
+                        <button type="submit" class="px-6 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600">
+                            <i class="fas fa-paper-plane mr-2"></i>Enviar a Todos
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Members List Modal -->
+    <div id="membersListModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 hidden">
+        <div class="bg-white rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+            <div class="p-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-xl font-bold" id="membersModalTitle">Lista de Miembros</h3>
+                    <button onclick="closeMembersListModal()" class="text-gray-400 hover:text-gray-600">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+
+                <div class="mb-4">
+                    <input type="text" id="membersSearch" placeholder="Buscar miembros..." 
+                           class="w-full p-3 border border-gray-300 rounded-lg" onkeyup="searchMembersList()">
+                </div>
+
+                <div id="membersListContent" class="space-y-2">
+                    <!-- Los miembros se cargarán aquí -->
+                </div>
+
+                <div class="mt-6 flex justify-end space-x-3">
+                    <button onclick="closeMembersListModal()" class="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50">
+                        Cerrar
+                    </button>
+                    <button id="sendToAllMembers" class="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600">
+                        <i class="fas fa-paper-plane mr-2"></i>Enviar a Todos
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Template Manager Modal -->
+    <div id="templateManagerModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 hidden">
+        <div class="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <div class="p-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-xl font-bold">Gestión de Plantillas</h3>
+                    <button onclick="closeTemplateManager()" class="text-gray-400 hover:text-gray-600">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+
+                <div class="space-y-4">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="templatesList">
+                        <!-- Las plantillas se cargarán aquí -->
+                    </div>
+
+                    <div class="border-t pt-4">
+                        <h4 class="font-bold mb-3">Crear Nueva Plantilla</h4>
+                        <form id="templateForm" class="space-y-3">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Nombre de la Plantilla</label>
+                                <input type="text" id="templateName" 
+                                       class="w-full p-2 border border-gray-300 rounded-lg"
+                                       placeholder="Ej: Recordatorio Pago Mensual">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Contenido</label>
+                                <textarea id="templateContent" rows="4"
+                                          class="w-full p-2 border border-gray-300 rounded-lg"
+                                          placeholder="Escribe el contenido de la plantilla..."></textarea>
+                            </div>
+                            <button type="submit" class="w-full bg-blue-500 hover:bg-blue-600 text-white py-2 rounded-lg">
+                                <i class="fas fa-save mr-2"></i>Guardar Plantilla
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Promotion Modal -->
+    <div id="promotionModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 hidden">
+        <div class="bg-white rounded-lg shadow-xl w-full max-w-md">
+            <div class="p-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-xl font-bold">Crear Promoción</h3>
+                    <button onclick="closePromotionModal()" class="text-gray-400 hover:text-gray-600">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+
+                <form id="promotionForm" class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Título de la Promoción</label>
+                        <input type="text" id="promotionTitle" required
+                               class="w-full p-3 border border-gray-300 rounded-lg"
+                               placeholder="Ej: 20% OFF en Suplementos">
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Mensaje</label>
+                        <textarea id="promotionMessage" rows="4" required
+                                  class="w-full p-3 border border-gray-300 rounded-lg"
+                                  placeholder="Describe la promoción..."></textarea>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Grupo Destino</label>
+                        <select id="promotionGroup" class="w-full p-3 border border-gray-300 rounded-lg">
+                            <option value="all_members">Todos los miembros</option>
+                            <option value="inactive_15">Miembros inactivos (15+ días)</option>
+                            <option value="specific_plan">Plan específico</option>
+                        </select>
+                    </div>
+
+                    <div class="flex justify-end space-x-3 pt-4">
+                        <button type="button" onclick="closePromotionModal()" 
+                                class="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50">
+                            Cancelar
+                        </button>
+                        <button type="submit" class="px-6 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600">
+                            <i class="fas fa-bullhorn mr-2"></i>Crear Promoción
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentMembersList = [];
+        let currentListType = '';
+
+        function goToDashboard() {
+            window.location.href = 'dashboard.html';
+        }
+
+        function logout() {
+            AuthManager.logout();
+            window.location.href = 'index.html';
+        }
+
+        // Modal Functions
+        function showSendBulkModal() {
+            loadPlansForBulk();
+            document.getElementById('sendBulkModal').classList.remove('hidden');
+            updateBulkPreview();
+        }
+
+        function closeSendBulkModal() {
+            document.getElementById('sendBulkModal').classList.add('hidden');
+        }
+
+        function showInactiveMembers() {
+            currentListType = 'inactive';
+            loadInactiveMembers();
+            document.getElementById('membersModalTitle').textContent = 'Miembros Inactivos (15+ días)';
+            document.getElementById('membersListModal').classList.remove('hidden');
+        }
+
+        function showPendingPayments() {
+            currentListType = 'payments';
+            loadPendingPayments();
+            document.getElementById('membersModalTitle').textContent = 'Pagos Pendientes';
+            document.getElementById('membersListModal').classList.remove('hidden');
+        }
+
+        function showBirthdays() {
+            currentListType = 'birthdays';
+            loadBirthdays();
+            document.getElementById('membersModalTitle').textContent = 'Cumpleaños Este Mes';
+            document.getElementById('membersListModal').classList.remove('hidden');
+        }
+
+        function showPromotions() {
+            document.getElementById('promotionModal').classList.remove('hidden');
+        }
+
+        function closePromotionModal() {
+            document.getElementById('promotionModal').classList.add('hidden');
+        }
+
+        function closeMembersListModal() {
+            document.getElementById('membersListModal').classList.add('hidden');
+            currentMembersList = [];
+        }
+
+        function showTemplateManager() {
+            loadTemplates();
+            document.getElementById('templateManagerModal').classList.remove('hidden');
+        }
+
+        function closeTemplateManager() {
+            document.getElementById('templateManagerModal').classList.add('hidden');
+        }
+
+        // Data Loading
+        function loadRemindersData() {
+            const user = AuthManager.getCurrentUser();
+            if (!user) {
+                window.location.href = 'index.html';
+                return;
+            }
+
+            document.getElementById('userName').textContent = `${user.name} ${user.last_name || ''}`;
+            loadStats();
+            loadReminders();
+            updateQuickActions();
+        }
+
+        function loadStats() {
+            const members = LocalStorageDriver.getAll('members');
+            const reminders = LocalStorageDriver.getAll('reminders');
+            const today = new Date().toDateString();
+
+            // Miembros inactivos (15+ días)
+            const inactiveMembers = getInactiveMembers(15);
+            document.getElementById('inactiveMembers').textContent = inactiveMembers.length;
+
+            // Pagos pendientes (simulado)
+            const pendingPayments = members.filter(m => m.status === 'active').length;
+            document.getElementById('pendingPayments').textContent = pendingPayments;
+
+            // Recordatorios enviados hoy
+            const sentToday = reminders.filter(r => 
+                new Date(r.sent_at).toDateString() === today
+            );
+            document.getElementById('sentToday').textContent = sentToday.length;
+
+            // Pendientes hoy (inactivos + pagos)
+            document.getElementById('pendingReminders').textContent = inactiveMembers.length + pendingPayments;
+        }
+
+        function updateQuickActions() {
+            const inactiveMembers = getInactiveMembers(15);
+            const pendingPayments = LocalStorageDriver.getAll('members').filter(m => m.status === 'active').length;
+            const birthdays = getBirthdaysThisMonth();
+            const promotions = 0; // Podría venir de una base de datos de promociones
+
+            document.getElementById('inactiveCount').textContent = inactiveMembers.length;
+            document.getElementById('paymentsCount').textContent = pendingPayments;
+            document.getElementById('birthdaysCount').textContent = birthdays.length;
+            document.getElementById('promotionsCount').textContent = promotions;
+        }
+
+        function getInactiveMembers(days) {
+            const members = LocalStorageDriver.getAll('members').filter(m => m.status === 'active');
+            const attendance = LocalStorageDriver.getAll('attendance');
+            const cutoffDate = new Date();
+            cutoffDate.setDate(cutoffDate.getDate() - days);
+
+            return members.filter(member => {
+                const lastAttendance = attendance
+                    .filter(a => a.member_id === member.id)
+                    .sort((a, b) => new Date(b.check_in) - new Date(a.check_in))[0];
+                
+                return !lastAttendance || new Date(lastAttendance.check_in) < cutoffDate;
+            });
+        }
+
+        function getBirthdaysThisMonth() {
+            const members = LocalStorageDriver.getAll('members');
+            const currentMonth = new Date().getMonth() + 1;
+            
+            // Simulación - en una implementación real, los miembros tendrían fecha de nacimiento
+            return members.slice(0, 3); // Devolver primeros 3 como ejemplo
+        }
+
+        function loadReminders() {
+            const filter = document.getElementById('reminderFilter').value;
+            let reminders = LocalStorageDriver.getAll('reminders');
+
+            // Ordenar por fecha (más reciente primero)
+            reminders.sort((a, b) => new Date(b.sent_at || b.created_at) - new Date(a.sent_at || a.created_at));
+
+            if (filter !== 'all') {
+                reminders = reminders.filter(r => r.status === filter);
+            }
+
+            renderReminders(reminders);
+        }
+
+        function renderReminders(reminders) {
+            const container = document.getElementById('remindersTable');
+            const emptyState = document.getElementById('emptyReminders');
+
+            if (reminders.length === 0) {
+                container.innerHTML = '';
+                emptyState.classList.remove('hidden');
+                return;
+            }
+
+            emptyState.classList.add('hidden');
+            container.innerHTML = '';
+
+            reminders.forEach(reminder => {
+                const row = document.createElement('tr');
+                row.className = 'hover:bg-gray-50';
+                row.innerHTML = `
+                    <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
+                        ${new Date(reminder.sent_at || reminder.created_at).toLocaleDateString('es-CO')}
+                    </td>
+                    <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
+                        <span class="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs">${reminder.type}</span>
+                    </td>
+                    <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
+                        ${reminder.recipient_count || 1} destinatarios
+                    </td>
+                    <td class="px-4 py-4 text-sm text-gray-900">
+                        <div class="max-w-xs truncate">${reminder.message}</div>
+                    </td>
+                    <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
+                        <span class="px-2 py-1 rounded text-xs ${reminder.status === 'sent' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}">
+                            ${reminder.status === 'sent' ? 'ENVIADO' : 'PENDIENTE'}
+                        </span>
+                    </td>
+                    <td class="px-4 py-4 whitespace-nowrap text-sm font-medium">
+                        <button onclick="viewReminderDetails('${reminder.id}')" class="text-blue-600 hover:text-blue-900 mr-2">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                        ${reminder.status !== 'sent' ? `
+                        <button onclick="sendReminderNow('${reminder.id}')" class="text-green-600 hover:text-green-900">
+                            <i class="fas fa-paper-plane"></i>
+                        </button>
+                        ` : ''}
+                    </td>
+                `;
+                container.appendChild(row);
+            });
+        }
+
+        // Bulk Messaging
+        function loadPlansForBulk() {
+            const plans = LocalStorageDriver.getAll('plans');
+            const select = document.getElementById('specificPlan');
+            select.innerHTML = '<option value="">Seleccionar plan...</option>';
+            
+            plans.forEach(plan => {
+                const option = document.createElement('option');
+                option.value = plan.id;
+                option.textContent = plan.name;
+                select.appendChild(option);
+            });
+        }
+
+        document.getElementById('bulkGroup').addEventListener('change', function() {
+            const specificPlanSection = document.getElementById('specificPlanSection');
+            if (this.value === 'specific_plan') {
+                specificPlanSection.classList.remove('hidden');
+            } else {
+                specificPlanSection.classList.add('hidden');
+            }
+            updateBulkPreview();
+        });
+
+        document.getElementById('bulkMessage').addEventListener('input', updateBulkPreview);
+
+        function loadTemplateContent() {
+            const template = document.getElementById('bulkTemplate').value;
+            const messageField = document.getElementById('bulkMessage');
+            
+            const templates = {
+                'inactivity_7': `¡Hola {nombre}! 👋\n\nNotamos que hace 7 días no nos visitas en el gimnasio. ¿Todo bien? 💪\n\nTe extrañamos y queremos saber si necesitas ayuda con tu rutina o si hay algo en lo que podamos apoyarte.\n\n¡Esperamos verte pronto! 🏋️‍♂️`,
+                'inactivity_15': `¡Hola {nombre}! 👋\n\nTu cuerpo te está esperando en PowerGym! 💪\n\nHace 15 días que no nos visitas y queremos asegurarnos de que estés bien. ¿Necesitas ajustar tu rutina o tienes alguna pregunta?\n\nRecuerda que tu bienestar es nuestra prioridad. ¡Te esperamos! 🏋️‍♂️`,
+                'inactivity_30': `¡Hola {nombre}! 👋\n\nNotamos que hace 30 días no vienes al gimnasio. Tu salud y bienestar son importantes para nosotros. 💪\n\n¿Hay algo en lo que podamos ayudarte? Tal vez necesites una rutina nueva o tengas alguna inquietud.\n\n¡Tu lugar en PowerGym te espera! 🏋️‍♂️`,
+                'payment_reminder': `¡Hola {nombre}! 👋\n\nRecordatorio amigable: Tu mensualidad del plan {plan} está por vencer. 📅\n\nMantén tus beneficios activos y continúa tu transformación con nosotros. 💪\n\n¡Gracias por ser parte de PowerGym! 🏋️‍♂️`,
+                'birthday': `¡Hola {nombre}! 🎉\n\n¡Todo el equipo de PowerGym te desea un FELIZ CUMPLEAÑOS! 🎂\n\nPara celebrar contigo, te regalamos un día extra en tu membresía. ¡Ven a entrenar por tu cumpleaños!\n\n¡Que tengas un día maravilloso! 💪🎁`,
+                'promotion': `¡Hola {nombre}! 👋\n\nTenemos una PROMOCIÓN ESPECIAL para ti! 🎯\n\nEste mes tenemos descuentos exclusivos en suplementos y servicios personalizados.\n\n¡No te lo pierdas! Acércate al gimnasio para más información. 💪`
+            };
+
+            if (template && templates[template]) {
+                messageField.value = templates[template];
+            } else if (template === 'custom') {
+                messageField.value = '';
+            }
+            
+            updateBulkPreview();
+        }
+
+        function insertVariable(variable) {
+            const messageField = document.getElementById('bulkMessage');
+            const start = messageField.selectionStart;
+            const end = messageField.selectionEnd;
+            const text = messageField.value;
+            
+            messageField.value = text.substring(0, start) + variable + text.substring(end);
+            messageField.focus();
+            messageField.setSelectionRange(start + variable.length, start + variable.length);
+            updateBulkPreview();
+        }
+
+        function updateBulkPreview() {
+            const group = document.getElementById('bulkGroup').value;
+            const message = document.getElementById('bulkMessage').value;
+            const preview = document.getElementById('bulkPreview');
+            const previewMessage = document.getElementById('previewMessage');
+            const previewCount = document.getElementById('previewCount');
+
+            if (!group || !message) {
+                preview.classList.add('hidden');
+                return;
+            }
+
+            let count = 0;
+            switch (group) {
+                case 'all_members':
+                    count = LocalStorageDriver.getAll('members').filter(m => m.status === 'active').length;
+                    break;
+                case 'inactive_7':
+                    count = getInactiveMembers(7).length;
+                    break;
+                case 'inactive_15':
+                    count = getInactiveMembers(15).length;
+                    break;
+                case 'inactive_30':
+                    count = getInactiveMembers(30).length;
+                    break;
+                case 'pending_payments':
+                    count = LocalStorageDriver.getAll('members').filter(m => m.status === 'active').length;
+                    break;
+                case 'birthdays':
+                    count = getBirthdaysThisMonth().length;
+                    break;
+                case 'specific_plan':
+                    const planId = document.getElementById('specificPlan').value;
+                    if (planId) {
+                        count = LocalStorageDriver.getAll('members').filter(m => m.plan_id === planId && m.status === 'active').length;
+                    }
+                    break;
+            }
+
+            previewCount.textContent = count;
+            previewMessage.textContent = message.substring(0, 100) + (message.length > 100 ? '...' : '');
+            preview.classList.remove('hidden');
+        }
+
+        document.getElementById('bulkMessageForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const group = document.getElementById('bulkGroup').value;
+            const message = document.getElementById('bulkMessage').value;
+            let members = [];
+
+            switch (group) {
+                case 'all_members':
+                    members = LocalStorageDriver.getAll('members').filter(m => m.status === 'active');
+                    break;
+                case 'inactive_7':
+                    members = getInactiveMembers(7);
+                    break;
+                case 'inactive_15':
+                    members = getInactiveMembers(15);
+                    break;
+                case 'inactive_30':
+                    members = getInactiveMembers(30);
+                    break;
+                case 'pending_payments':
+                    members = LocalStorageDriver.getAll('members').filter(m => m.status === 'active');
+                    break;
+                case 'birthdays':
+                    members = getBirthdaysThisMonth();
+                    break;
+                case 'specific_plan':
+                    const planId = document.getElementById('specificPlan').value;
+                    members = LocalStorageDriver.getAll('members').filter(m => m.plan_id === planId && m.status === 'active');
+                    break;
+            }
+
+            if (members.length === 0) {
+                Utilities.showToast('No hay miembros en el grupo seleccionado', 'error');
+                return;
+            }
+
+            sendBulkMessages(members, message);
+        });
+
+        function sendBulkMessages(members, message) {
+            let sentCount = 0;
+            const total = members.length;
+
+            members.forEach(member => {
+                // Personalizar mensaje
+                const personalizedMessage = message
+                    .replace(/{nombre}/g, member.name)
+                    .replace(/{plan}/g, getMemberPlanName(member.plan_id))
+                    .replace(/{dias_inactivo}/g, '7') // En una implementación real, calcular días reales
+                    .replace(/{fecha_pago}/g, 'próxima semana'); // En una implementación real, calcular fecha real
+
+                // Enviar mensaje (simulado)
+                WhatsAppManager.sendMessage(member.phone, personalizedMessage);
+                sentCount++;
+
+                // Guardar recordatorio
+                const reminderData = {
+                    type: 'bulk_message',
+                    member_id: member.id,
+                    message: personalizedMessage,
+                    status: 'sent',
+                    sent_at: new Date().toISOString(),
+                    recipient_count: 1
+                };
+                LocalStorageDriver.create('reminders', reminderData);
+            });
+
+            Utilities.showToast(`Mensajes enviados a ${sentCount} miembros`);
+            closeSendBulkModal();
+            loadRemindersData();
+        }
+
+        function getMemberPlanName(planId) {
+            if (!planId) return 'Sin plan';
+            const plan = LocalStorageDriver.getAll('plans').find(p => p.id === planId);
+            return plan ? plan.name : 'Sin plan';
+        }
+
+        // Members List Management
+        function loadInactiveMembers() {
+            currentMembersList = getInactiveMembers(15);
+            renderMembersList(currentMembersList);
+        }
+
+        function loadPendingPayments() {
+            currentMembersList = LocalStorageDriver.getAll('members').filter(m => m.status === 'active');
+            renderMembersList(currentMembersList);
+        }
+
+        function loadBirthdays() {
+            currentMembersList = getBirthdaysThisMonth();
+            renderMembersList(currentMembersList);
+        }
+
+        function renderMembersList(members) {
+            const container = document.getElementById('membersListContent');
+            container.innerHTML = '';
+
+            if (members.length === 0) {
+                container.innerHTML = '<p class="text-center text-gray-500 py-4">No hay miembros en esta categoría</p>';
+                return;
+            }
+
+            members.forEach(member => {
+                const memberDiv = document.createElement('div');
+                memberDiv.className = 'flex items-center justify-between p-3 border border-gray-200 rounded-lg';
+                memberDiv.innerHTML = `
+                    <div class="flex items-center space-x-3">
+                        <div class="bg-blue-100 text-blue-600 w-10 h-10 rounded-full flex items-center justify-center">
+                            <i class="fas fa-user"></i>
+                        </div>
+                        <div>
+                            <h4 class="font-medium">${member.name} ${member.last_name || ''}</h4>
+                            <p class="text-sm text-gray-600">${member.phone}</p>
+                            <p class="text-xs text-gray-500">${getMemberPlanName(member.plan_id)}</p>
+                        </div>
+                    </div>
+                    <button onclick="sendIndividualMessage('${member.id}')" class="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded text-sm">
+                        <i class="fas fa-paper-plane mr-1"></i>Enviar
+                    </button>
+                `;
+                container.appendChild(memberDiv);
+            });
+        }
+
+        function searchMembersList() {
+            const searchTerm = document.getElementById('membersSearch').value.toLowerCase();
+            const filteredMembers = currentMembersList.filter(member => 
+                member.name.toLowerCase().includes(searchTerm) ||
+                (member.last_name && member.last_name.toLowerCase().includes(searchTerm)) ||
+                member.phone.includes(searchTerm)
+            );
+            renderMembersList(filteredMembers);
+        }
+
+        function sendIndividualMessage(memberId) {
+            const member = currentMembersList.find(m => m.id === memberId);
+            if (!member) return;
+
+            let message = '';
+            switch (currentListType) {
+                case 'inactive':
+                    message = WhatsAppManager.getMessageTemplates().inactivity_15;
+                    break;
+                case 'payments':
+                    message = WhatsAppManager.getMessageTemplates().payment_reminder;
+                    break;
+                case 'birthdays':
+                    message = WhatsAppManager.getMessageTemplates().birthday;
+                    break;
+                default:
+                    message = '¡Hola! Te contactamos desde PowerGym. ¿Cómo estás? 💪';
+            }
+
+            // Personalizar mensaje
+            const personalizedMessage = message
+                .replace(/{nombre}/g, member.name)
+                .replace(/{plan}/g, getMemberPlanName(member.plan_id));
+
+            WhatsAppManager.sendMessage(member.phone, personalizedMessage);
+
+            // Guardar recordatorio
+            const reminderData = {
+                type: 'individual_message',
+                member_id: member.id,
+                message: personalizedMessage,
+                status: 'sent',
+                sent_at: new Date().toISOString()
+            };
+            LocalStorageDriver.create('reminders', reminderData);
+
+            Utilities.showToast(`Mensaje enviado a ${member.name}`);
+        }
+
+        // Template Management
+        function loadTemplates() {
+            const templates = WhatsAppManager.getMessageTemplates();
+            const container = document.getElementById('templatesList');
+            
+            container.innerHTML = Object.entries(templates).map(([key, content]) => `
+                <div class="bg-gray-50 p-4 rounded-lg">
+                    <h4 class="font-bold text-sm mb-2">${getTemplateName(key)}</h4>
+                    <p class="text-sm text-gray-600 mb-3 line-clamp-3">${content}</p>
+                    <button onclick="useTemplate('${key}')" class="w-full bg-blue-500 hover:bg-blue-600 text-white py-1 rounded text-xs">
+                        Usar Plantilla
+                    </button>
+                </div>
+            `).join('');
+        }
+
+        function getTemplateName(key) {
+            const names = {
+                'payment_reminder': 'Recordatorio de Pago',
+                'inactivity_7': 'Inactividad 7 Días',
+                'inactivity_15': 'Inactividad 15 Días',
+                'inactivity_30': 'Inactividad 30 Días',
+                'birthday': 'Felicitación Cumpleaños',
+                'promotion': 'Promoción Especial'
+            };
+            return names[key] || key;
+        }
+
+        function useTemplate(templateKey) {
+            const template = WhatsAppManager.getMessageTemplates()[templateKey];
+            document.getElementById('bulkMessage').value = template;
+            closeTemplateManager();
+            showSendBulkModal();
+        }
+
+        document.getElementById('templateForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            Utilities.showToast('Funcionalidad de guardado de plantillas en desarrollo', 'error');
+        });
+
+        // Promotion Management
+        document.getElementById('promotionForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const title = document.getElementById('promotionTitle').value;
+            const message = document.getElementById('promotionMessage').value;
+            const group = document.getElementById('promotionGroup').value;
+
+            // En una implementación real, aquí se guardaría la promoción y se programaría
+            Utilities.showToast(`Promoción "${title}" creada exitosamente`);
+            closePromotionModal();
+        });
+
+        // Automatic Reminders
+        function sendAutomaticReminders() {
+            const inactiveMembers = getInactiveMembers(15);
+            const pendingPayments = LocalStorageDriver.getAll('members').filter(m => m.status === 'active');
+
+            let totalSent = 0;
+
+            // Enviar a inactivos
+            inactiveMembers.forEach(member => {
+                const message = WhatsAppManager.getMessageTemplates().inactivity_15
+                    .replace(/{nombre}/g, member.name)
+                    .replace(/{plan}/g, getMemberPlanName(member.plan_id));
+
+                WhatsAppManager.sendMessage(member.phone, message);
+                totalSent++;
+
+                // Guardar recordatorio
+                const reminderData = {
+                    type: 'automatic_inactivity',
+                    member_id: member.id,
+                    message: message,
+                    status: 'sent',
+                    sent_at: new Date().toISOString()
+                };
+                LocalStorageDriver.create('reminders', reminderData);
+            });
+
+            // Enviar recordatorios de pago
+            pendingPayments.forEach(member => {
+                const message = WhatsAppManager.getMessageTemplates().payment_reminder
+                    .replace(/{nombre}/g, member.name)
+                    .replace(/{plan}/g, getMemberPlanName(member.plan_id));
+
+                WhatsAppManager.sendMessage(member.phone, message);
+                totalSent++;
+
+                // Guardar recordatorio
+                const reminderData = {
+                    type: 'automatic_payment',
+                    member_id: member.id,
+                    message: message,
+                    status: 'sent',
+                    sent_at: new Date().toISOString()
+                };
+                LocalStorageDriver.create('reminders', reminderData);
+            });
+
+            Utilities.showToast(`Recordatorios automáticos enviados a ${totalSent} miembros`);
+            loadRemindersData();
+        }
+
+        // Utility Functions
+        function viewReminderDetails(reminderId) {
+            const reminder = LocalStorageDriver.getAll('reminders').find(r => r.id === reminderId);
+            if (!reminder) return;
+
+            alert(`Detalles del recordatorio:\n\nTipo: ${reminder.type}\nFecha: ${new Date(reminder.sent_at).toLocaleString()}\nMensaje: ${reminder.message}`);
+        }
+
+        function sendReminderNow(reminderId) {
+            const reminder = LocalStorageDriver.getAll('reminders').find(r => r.id === reminderId);
+            if (!reminder) return;
+
+            const member = LocalStorageDriver.getAll('members').find(m => m.id === reminder.member_id);
+            if (member) {
+                WhatsAppManager.sendMessage(member.phone, reminder.message);
+                LocalStorageDriver.update('reminders', reminderId, { 
+                    status: 'sent',
+                    sent_at: new Date().toISOString()
+                });
+                Utilities.showToast('Recordatorio enviado');
+                loadReminders();
+            }
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            loadRemindersData();
+        });
+    </script>
+</body>
+</html>
