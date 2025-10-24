@@ -1,0 +1,958 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ventas - PowerGym</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="shared.js"></script>
+</head>
+<body class="bg-gray-100">
+    <!-- Navbar -->
+    <nav class="bg-blue-600 text-white p-4 shadow-lg">
+        <div class="container mx-auto flex justify-between items-center">
+            <div class="flex items-center space-x-4">
+                <a href="dashboard.html" class="text-white hover:text-blue-200">
+                    <i class="fas fa-arrow-left"></i>
+                </a>
+                <h1 class="text-xl font-bold">🧾 Sistema de Ventas</h1>
+            </div>
+            <div class="flex items-center space-x-4">
+                <span id="userName" class="hidden md:block"></span>
+                <button onclick="logout()" class="bg-red-500 hover:bg-red-600 px-4 py-2 rounded-lg flex items-center">
+                    <i class="fas fa-sign-out-alt mr-2"></i>
+                    <span class="hidden md:inline">Salir</span>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Mobile Menu -->
+    <div class="bg-blue-500 text-white p-2 md:hidden">
+        <button onclick="goToDashboard()" class="w-full text-left">
+            <i class="fas fa-arrow-left mr-2"></i> Volver al Dashboard
+        </button>
+    </div>
+
+    <!-- Main Content -->
+    <div class="container mx-auto p-4">
+        <!-- Header Stats -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+            <div class="bg-white rounded-lg shadow p-4 text-center">
+                <div class="text-2xl font-bold text-blue-600" id="todaySales">0</div>
+                <div class="text-gray-600 text-sm">Ventas Hoy</div>
+            </div>
+            <div class="bg-white rounded-lg shadow p-4 text-center">
+                <div class="text-2xl font-bold text-green-600" id="todayRevenue">$0</div>
+                <div class="text-gray-600 text-sm">Ingresos Hoy</div>
+            </div>
+            <div class="bg-white rounded-lg shadow p-4 text-center">
+                <div class="text-2xl font-bold text-purple-600" id="monthRevenue">$0</div>
+                <div class="text-gray-600 text-sm">Ingresos Mes</div>
+            </div>
+            <div class="bg-white rounded-lg shadow p-4 text-center">
+                <div class="text-2xl font-bold text-orange-600" id="avgSale">$0</div>
+                <div class="text-gray-600 text-sm">Ticket Promedio</div>
+            </div>
+        </div>
+
+        <!-- POS System -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <!-- Left Column - Product Search & List -->
+            <div class="lg:col-span-2">
+                <div class="bg-white rounded-lg shadow-lg p-6">
+                    <!-- Customer Selection -->
+                    <div class="mb-6">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Cliente</label>
+                        <div class="flex space-x-2">
+                            <select id="customerSelect" class="flex-1 p-3 border border-gray-300 rounded-lg">
+                                <option value="">Venta al público general</option>
+                                <!-- Los clientes se cargarán aquí -->
+                            </select>
+                            <button onclick="showCustomerModal()" class="bg-blue-500 hover:bg-blue-600 text-white p-3 rounded-lg">
+                                <i class="fas fa-user-plus"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Product Search -->
+                    <div class="mb-6">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Buscar Productos</label>
+                        <div class="relative">
+                            <input type="text" id="productSearch" placeholder="Nombre, código o categoría..." 
+                                   class="w-full p-3 border border-gray-300 rounded-lg pl-10"
+                                   onkeyup="searchProducts()">
+                            <i class="fas fa-search absolute left-3 top-3 text-gray-400"></i>
+                        </div>
+                    </div>
+
+                    <!-- Products Grid -->
+                    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3" id="productsGrid">
+                        <!-- Los productos se cargarán aquí -->
+                    </div>
+
+                    <!-- Empty Products State -->
+                    <div id="emptyProducts" class="text-center py-8 hidden">
+                        <i class="fas fa-box-open text-4xl text-gray-300 mb-4"></i>
+                        <h3 class="text-lg font-medium text-gray-900">No hay productos disponibles</h3>
+                        <p class="text-gray-500">Agrega productos al inventario para comenzar a vender.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column - Cart & Checkout -->
+            <div class="lg:col-span-1">
+                <div class="bg-white rounded-lg shadow-lg p-6 sticky top-4">
+                    <h3 class="text-lg font-bold mb-4">Carrito de Venta</h3>
+                    
+                    <!-- Cart Items -->
+                    <div id="cartItems" class="space-y-3 max-h-64 overflow-y-auto mb-4">
+                        <!-- Los items del carrito se mostrarán aquí -->
+                    </div>
+
+                    <!-- Empty Cart State -->
+                    <div id="emptyCart" class="text-center py-8">
+                        <i class="fas fa-shopping-cart text-4xl text-gray-300 mb-4"></i>
+                        <p class="text-gray-500">El carrito está vacío</p>
+                    </div>
+
+                    <!-- Cart Summary -->
+                    <div id="cartSummary" class="space-y-2 border-t border-gray-200 pt-4 hidden">
+                        <div class="flex justify-between text-sm">
+                            <span>Subtotal:</span>
+                            <span id="subtotal">$0</span>
+                        </div>
+                        <div class="flex justify-between text-sm">
+                            <span>Descuento:</span>
+                            <span id="discountAmount">$0</span>
+                        </div>
+                        <div class="flex justify-between font-bold text-lg">
+                            <span>Total:</span>
+                            <span id="totalAmount">$0</span>
+                        </div>
+                    </div>
+
+                    <!-- Discount -->
+                    <div class="mt-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Descuento</label>
+                        <div class="flex space-x-2">
+                            <input type="number" id="discountInput" min="0" max="100" 
+                                   class="flex-1 p-2 border border-gray-300 rounded-lg" 
+                                   placeholder="0" onchange="applyDiscount()">
+                            <span class="flex items-center px-3 bg-gray-100 rounded-lg">%</span>
+                        </div>
+                    </div>
+
+                    <!-- Payment Methods -->
+                    <div class="mt-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Método de Pago</label>
+                        <div class="grid grid-cols-2 gap-2">
+                            <label class="flex items-center space-x-2 p-2 border border-gray-300 rounded-lg cursor-pointer">
+                                <input type="radio" name="paymentMethod" value="efectivo" checked class="text-blue-500">
+                                <span class="text-sm">Efectivo</span>
+                            </label>
+                            <label class="flex items-center space-x-2 p-2 border border-gray-300 rounded-lg cursor-pointer">
+                                <input type="radio" name="paymentMethod" value="tarjeta" class="text-blue-500">
+                                <span class="text-sm">Tarjeta</span>
+                            </label>
+                            <label class="flex items-center space-x-2 p-2 border border-gray-300 rounded-lg cursor-pointer">
+                                <input type="radio" name="paymentMethod" value="transferencia" class="text-blue-500">
+                                <span class="text-sm">Transferencia</span>
+                            </label>
+                            <label class="flex items-center space-x-2 p-2 border border-gray-300 rounded-lg cursor-pointer">
+                                <input type="radio" name="paymentMethod" value="nequi" class="text-blue-500">
+                                <span class="text-sm">Nequi</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Cash Payment -->
+                    <div id="cashPayment" class="mt-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Efectivo Recibido</label>
+                        <input type="number" id="cashReceived" min="0" 
+                               class="w-full p-2 border border-gray-300 rounded-lg" 
+                               onchange="calculateChange()">
+                    </div>
+
+                    <!-- Change -->
+                    <div id="changeSection" class="mt-2 hidden">
+                        <div class="flex justify-between text-sm font-bold text-green-600">
+                            <span>Cambio:</span>
+                            <span id="changeAmount">$0</span>
+                        </div>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="mt-6 space-y-2">
+                        <button onclick="processSale()" class="w-full bg-green-500 hover:bg-green-600 text-white py-3 rounded-lg font-bold">
+                            <i class="fas fa-cash-register mr-2"></i>PROCESAR VENTA
+                        </button>
+                        <button onclick="clearCart()" class="w-full bg-gray-500 hover:bg-gray-600 text-white py-2 rounded-lg">
+                            <i class="fas fa-trash mr-2"></i>Limpiar Carrito
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Sales -->
+        <div class="bg-white rounded-lg shadow-lg p-6 mt-6">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-bold">Ventas Recientes</h3>
+                <button onclick="loadSalesHistory()" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg">
+                    <i class="fas fa-refresh mr-2"></i>Actualizar
+                </button>
+            </div>
+
+            <div class="overflow-x-auto">
+                <table class="w-full">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fecha</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cliente</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Productos</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Pago</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="salesHistoryTable" class="bg-white divide-y divide-gray-200">
+                        <!-- Las ventas recientes se cargarán aquí -->
+                    </tbody>
+                </table>
+            </div>
+
+            <div id="emptySales" class="text-center py-8 hidden">
+                <i class="fas fa-receipt text-4xl text-gray-300 mb-4"></i>
+                <h3 class="text-lg font-medium text-gray-900">No hay ventas registradas</h3>
+                <p class="text-gray-500">Las ventas aparecerán aquí una vez que las proceses.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Customer Modal -->
+    <div id="customerModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 hidden">
+        <div class="bg-white rounded-lg shadow-xl w-full max-w-md">
+            <div class="p-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-xl font-bold">Seleccionar Cliente</h3>
+                    <button onclick="closeCustomerModal()" class="text-gray-400 hover:text-gray-600">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+
+                <div class="mb-4">
+                    <input type="text" id="customerSearch" placeholder="Buscar cliente..." 
+                           class="w-full p-3 border border-gray-300 rounded-lg" onkeyup="searchCustomers()">
+                </div>
+
+                <div id="customersList" class="max-h-64 overflow-y-auto space-y-2">
+                    <!-- Los clientes se cargarán aquí -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sale Details Modal -->
+    <div id="saleDetailsModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 hidden">
+        <div class="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <div class="p-6">
+                <div class="flex justify-between items-center mb-6">
+                    <h3 class="text-xl font-bold">Detalles de Venta</h3>
+                    <button onclick="closeSaleDetailsModal()" class="text-gray-400 hover:text-gray-600">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+
+                <div id="saleDetailsContent">
+                    <!-- Los detalles de la venta se cargarán aquí -->
+                </div>
+
+                <div class="mt-6 flex justify-end">
+                    <button onclick="closeSaleDetailsModal()" class="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600">
+                        Cerrar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Receipt Modal -->
+    <div id="receiptModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 hidden">
+        <div class="bg-white rounded-lg shadow-xl w-full max-w-md">
+            <div class="p-6">
+                <div class="text-center mb-6">
+                    <h3 class="text-xl font-bold">¡Venta Exitosa!</h3>
+                    <p class="text-green-600">La venta ha sido procesada correctamente</p>
+                </div>
+
+                <div id="receiptContent" class="bg-gray-50 p-4 rounded-lg mb-4">
+                    <!-- El recibo se generará aquí -->
+                </div>
+
+                <div class="flex space-x-3">
+                    <button onclick="printReceipt()" class="flex-1 bg-blue-500 hover:bg-blue-600 text-white py-2 rounded-lg">
+                        <i class="fas fa-print mr-2"></i>Imprimir
+                    </button>
+                    <button onclick="closeReceiptModal()" class="flex-1 bg-gray-500 hover:bg-gray-600 text-white py-2 rounded-lg">
+                        <i class="fas fa-check mr-2"></i>Continuar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let cart = [];
+        let currentSale = null;
+        let discountPercentage = 0;
+
+        function goToDashboard() {
+            window.location.href = 'dashboard.html';
+        }
+
+        function logout() {
+            AuthManager.logout();
+            window.location.href = 'index.html';
+        }
+
+        // Modal Functions
+        function showCustomerModal() {
+            loadCustomers();
+            document.getElementById('customerModal').classList.remove('hidden');
+        }
+
+        function closeCustomerModal() {
+            document.getElementById('customerModal').classList.add('hidden');
+        }
+
+        function closeSaleDetailsModal() {
+            document.getElementById('saleDetailsModal').classList.add('hidden');
+        }
+
+        function closeReceiptModal() {
+            document.getElementById('receiptModal').classList.add('hidden');
+            clearCart();
+        }
+
+        // Customer Management
+        function loadCustomers() {
+            const members = LocalStorageDriver.getAll('members').filter(m => m.status === 'active');
+            const container = document.getElementById('customersList');
+            const select = document.getElementById('customerSelect');
+            
+            // Limpiar selects
+            container.innerHTML = '';
+            select.innerHTML = '<option value="">Venta al público general</option>';
+            
+            members.forEach(member => {
+                // Para el select principal
+                const option = document.createElement('option');
+                option.value = member.id;
+                option.textContent = `${member.name} ${member.last_name || ''} - ${member.phone}`;
+                select.appendChild(option);
+
+                // Para la lista del modal
+                const customerDiv = document.createElement('div');
+                customerDiv.className = 'flex items-center justify-between p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer';
+                customerDiv.innerHTML = `
+                    <div>
+                        <h4 class="font-medium">${member.name} ${member.last_name || ''}</h4>
+                        <p class="text-sm text-gray-600">${member.phone}</p>
+                    </div>
+                    <button onclick="selectCustomer('${member.id}')" class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded text-sm">
+                        Seleccionar
+                    </button>
+                `;
+                container.appendChild(customerDiv);
+            });
+        }
+
+        function searchCustomers() {
+            const searchTerm = document.getElementById('customerSearch').value.toLowerCase();
+            const members = LocalStorageDriver.getAll('members').filter(m => m.status === 'active');
+            const container = document.getElementById('customersList');
+            
+            const filteredMembers = members.filter(member => 
+                member.name.toLowerCase().includes(searchTerm) ||
+                (member.last_name && member.last_name.toLowerCase().includes(searchTerm)) ||
+                member.phone.includes(searchTerm)
+            );
+
+            container.innerHTML = filteredMembers.map(member => `
+                <div class="flex items-center justify-between p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer">
+                    <div>
+                        <h4 class="font-medium">${member.name} ${member.last_name || ''}</h4>
+                        <p class="text-sm text-gray-600">${member.phone}</p>
+                    </div>
+                    <button onclick="selectCustomer('${member.id}')" class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded text-sm">
+                        Seleccionar
+                    </button>
+                </div>
+            `).join('');
+        }
+
+        function selectCustomer(customerId) {
+            document.getElementById('customerSelect').value = customerId;
+            closeCustomerModal();
+        }
+
+        // Product Management
+        function loadProducts() {
+            const products = LocalStorageDriver.getAll('products').filter(p => p.active !== false && p.stock > 0);
+            const container = document.getElementById('productsGrid');
+            const emptyState = document.getElementById('emptyProducts');
+
+            if (products.length === 0) {
+                container.innerHTML = '';
+                emptyState.classList.remove('hidden');
+                return;
+            }
+
+            emptyState.classList.add('hidden');
+            container.innerHTML = '';
+
+            products.forEach(product => {
+                const productCard = document.createElement('div');
+                productCard.className = 'bg-gray-50 border border-gray-200 rounded-lg p-3 hover:shadow-md transition-shadow cursor-pointer';
+                productCard.onclick = () => addToCart(product.id);
+                productCard.innerHTML = `
+                    <div class="text-center">
+                        <div class="bg-blue-100 text-blue-600 w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-2">
+                            <i class="fas fa-box"></i>
+                        </div>
+                        <h4 class="font-medium text-sm mb-1 truncate">${product.name}</h4>
+                        <p class="text-green-600 font-bold text-sm mb-1">${Utilities.formatCurrency(product.price)}</p>
+                        <p class="text-gray-500 text-xs">Stock: ${product.stock}</p>
+                    </div>
+                `;
+                container.appendChild(productCard);
+            });
+        }
+
+        function searchProducts() {
+            const searchTerm = document.getElementById('productSearch').value.toLowerCase();
+            const products = LocalStorageDriver.getAll('products').filter(p => p.active !== false && p.stock > 0);
+            const container = document.getElementById('productsGrid');
+            
+            const filteredProducts = products.filter(product => 
+                product.name.toLowerCase().includes(searchTerm) ||
+                (product.sku && product.sku.toLowerCase().includes(searchTerm)) ||
+                (product.category && product.category.toLowerCase().includes(searchTerm))
+            );
+
+            container.innerHTML = filteredProducts.map(product => `
+                <div class="bg-gray-50 border border-gray-200 rounded-lg p-3 hover:shadow-md transition-shadow cursor-pointer" onclick="addToCart('${product.id}')">
+                    <div class="text-center">
+                        <div class="bg-blue-100 text-blue-600 w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-2">
+                            <i class="fas fa-box"></i>
+                        </div>
+                        <h4 class="font-medium text-sm mb-1 truncate">${product.name}</h4>
+                        <p class="text-green-600 font-bold text-sm mb-1">${Utilities.formatCurrency(product.price)}</p>
+                        <p class="text-gray-500 text-xs">Stock: ${product.stock}</p>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Cart Management
+        function addToCart(productId) {
+            const product = LocalStorageDriver.getAll('products').find(p => p.id === productId);
+            if (!product) return;
+
+            const existingItem = cart.find(item => item.product_id === productId);
+            
+            if (existingItem) {
+                if (existingItem.quantity < product.stock) {
+                    existingItem.quantity += 1;
+                    existingItem.total = existingItem.quantity * product.price;
+                } else {
+                    Utilities.showToast('No hay suficiente stock disponible', 'error');
+                    return;
+                }
+            } else {
+                cart.push({
+                    product_id: productId,
+                    name: product.name,
+                    price: product.price,
+                    quantity: 1,
+                    total: product.price
+                });
+            }
+
+            updateCart();
+            Utilities.showToast(`${product.name} agregado al carrito`, 'success');
+        }
+
+        function updateCart() {
+            const container = document.getElementById('cartItems');
+            const emptyCart = document.getElementById('emptyCart');
+            const cartSummary = document.getElementById('cartSummary');
+            const subtotalElement = document.getElementById('subtotal');
+            const totalElement = document.getElementById('totalAmount');
+
+            if (cart.length === 0) {
+                container.innerHTML = '';
+                emptyCart.classList.remove('hidden');
+                cartSummary.classList.add('hidden');
+                return;
+            }
+
+            emptyCart.classList.add('hidden');
+            cartSummary.classList.remove('hidden');
+
+            container.innerHTML = cart.map((item, index) => `
+                <div class="flex items-center justify-between p-2 bg-gray-50 rounded">
+                    <div class="flex-1">
+                        <h5 class="font-medium text-sm">${item.name}</h5>
+                        <div class="text-xs text-gray-600">
+                            ${Utilities.formatCurrency(item.price)} x ${item.quantity}
+                        </div>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <span class="font-bold text-sm">${Utilities.formatCurrency(item.total)}</span>
+                        <div class="flex space-x-1">
+                            <button onclick="decreaseQuantity(${index})" class="text-blue-500 hover:text-blue-700">
+                                <i class="fas fa-minus text-xs"></i>
+                            </button>
+                            <button onclick="increaseQuantity(${index})" class="text-blue-500 hover:text-blue-700">
+                                <i class="fas fa-plus text-xs"></i>
+                            </button>
+                            <button onclick="removeFromCart(${index})" class="text-red-500 hover:text-red-700">
+                                <i class="fas fa-times text-xs"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+
+            const subtotal = cart.reduce((sum, item) => sum + item.total, 0);
+            const discount = (subtotal * discountPercentage) / 100;
+            const total = subtotal - discount;
+
+            subtotalElement.textContent = Utilities.formatCurrency(subtotal);
+            document.getElementById('discountAmount').textContent = Utilities.formatCurrency(discount);
+            totalElement.textContent = Utilities.formatCurrency(total);
+
+            // Mostrar/ocultar sección de efectivo
+            const paymentMethod = document.querySelector('input[name="paymentMethod"]:checked').value;
+            const cashSection = document.getElementById('cashPayment');
+            const changeSection = document.getElementById('changeSection');
+            
+            if (paymentMethod === 'efectivo') {
+                cashSection.classList.remove('hidden');
+                calculateChange();
+            } else {
+                cashSection.classList.add('hidden');
+                changeSection.classList.add('hidden');
+            }
+        }
+
+        function increaseQuantity(index) {
+            const item = cart[index];
+            const product = LocalStorageDriver.getAll('products').find(p => p.id === item.product_id);
+            
+            if (product && item.quantity < product.stock) {
+                item.quantity += 1;
+                item.total = item.quantity * item.price;
+                updateCart();
+            } else {
+                Utilities.showToast('No hay suficiente stock disponible', 'error');
+            }
+        }
+
+        function decreaseQuantity(index) {
+            const item = cart[index];
+            if (item.quantity > 1) {
+                item.quantity -= 1;
+                item.total = item.quantity * item.price;
+                updateCart();
+            }
+        }
+
+        function removeFromCart(index) {
+            cart.splice(index, 1);
+            updateCart();
+        }
+
+        function clearCart() {
+            cart = [];
+            discountPercentage = 0;
+            document.getElementById('discountInput').value = '';
+            updateCart();
+        }
+
+        // Discount & Payment
+        function applyDiscount() {
+            discountPercentage = parseInt(document.getElementById('discountInput').value) || 0;
+            if (discountPercentage < 0) discountPercentage = 0;
+            if (discountPercentage > 100) discountPercentage = 100;
+            updateCart();
+        }
+
+        function calculateChange() {
+            const total = getTotalAmount();
+            const cashReceived = parseFloat(document.getElementById('cashReceived').value) || 0;
+            const change = cashReceived - total;
+            
+            const changeSection = document.getElementById('changeSection');
+            const changeAmount = document.getElementById('changeAmount');
+            
+            if (change >= 0) {
+                changeSection.classList.remove('hidden');
+                changeAmount.textContent = Utilities.formatCurrency(change);
+            } else {
+                changeSection.classList.add('hidden');
+            }
+        }
+
+        function getTotalAmount() {
+            const subtotal = cart.reduce((sum, item) => sum + item.total, 0);
+            const discount = (subtotal * discountPercentage) / 100;
+            return subtotal - discount;
+        }
+
+        // Payment Method Change
+        document.querySelectorAll('input[name="paymentMethod"]').forEach(radio => {
+            radio.addEventListener('change', function() {
+                updateCart();
+            });
+        });
+
+        // Sale Processing
+        function processSale() {
+            if (cart.length === 0) {
+                Utilities.showToast('El carrito está vacío', 'error');
+                return;
+            }
+
+            // Verificar stock
+            for (const item of cart) {
+                const product = LocalStorageDriver.getAll('products').find(p => p.id === item.product_id);
+                if (!product || product.stock < item.quantity) {
+                    Utilities.showToast(`Stock insuficiente para ${item.name}`, 'error');
+                    return;
+                }
+            }
+
+            // Verificar pago en efectivo
+            const paymentMethod = document.querySelector('input[name="paymentMethod"]:checked').value;
+            if (paymentMethod === 'efectivo') {
+                const cashReceived = parseFloat(document.getElementById('cashReceived').value) || 0;
+                const total = getTotalAmount();
+                if (cashReceived < total) {
+                    Utilities.showToast('El efectivo recibido es menor al total', 'error');
+                    return;
+                }
+            }
+
+            const customerId = document.getElementById('customerSelect').value;
+            const customer = customerId ? LocalStorageDriver.getAll('members').find(m => m.id === customerId) : null;
+
+            const saleData = {
+                customer_id: customerId || null,
+                customer_name: customer ? `${customer.name} ${customer.last_name || ''}` : 'Público General',
+                products: cart.map(item => ({
+                    product_id: item.product_id,
+                    name: item.name,
+                    price: item.price,
+                    quantity: item.quantity,
+                    total: item.total
+                })),
+                subtotal: cart.reduce((sum, item) => sum + item.total, 0),
+                discount: discountPercentage,
+                discount_amount: (cart.reduce((sum, item) => sum + item.total, 0) * discountPercentage) / 100,
+                total: getTotalAmount(),
+                payment_method: paymentMethod,
+                cash_received: paymentMethod === 'efectivo' ? parseFloat(document.getElementById('cashReceived').value) : null,
+                change: paymentMethod === 'efectivo' ? (parseFloat(document.getElementById('cashReceived').value) - getTotalAmount()) : null,
+                date: new Date().toISOString(),
+                status: 'completed'
+            };
+
+            try {
+                // Guardar venta
+                const newSale = LocalStorageDriver.create('sales', saleData);
+                currentSale = newSale;
+
+                // Actualizar stock
+                cart.forEach(item => {
+                    const product = LocalStorageDriver.getAll('products').find(p => p.id === item.product_id);
+                    if (product) {
+                        const newStock = product.stock - item.quantity;
+                        LocalStorageDriver.update('products', item.product_id, { stock: newStock });
+                    }
+                });
+
+                // Mostrar recibo
+                showReceipt(newSale);
+                loadSalesData();
+                
+            } catch (error) {
+                Utilities.showToast('Error al procesar la venta', 'error');
+            }
+        }
+
+        function showReceipt(sale) {
+            const container = document.getElementById('receiptContent');
+            container.innerHTML = `
+                <div class="text-center mb-4">
+                    <h4 class="font-bold">POWERGYM</h4>
+                    <p class="text-sm">Sistema de Ventas</p>
+                    <p class="text-xs text-gray-600">${new Date(sale.date).toLocaleString('es-CO')}</p>
+                </div>
+
+                <div class="space-y-2 text-sm mb-4">
+                    <div class="flex justify-between">
+                        <span>Cliente:</span>
+                        <span>${sale.customer_name}</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span>Método de pago:</span>
+                        <span>${sale.payment_method.toUpperCase()}</span>
+                    </div>
+                </div>
+
+                <div class="border-t border-gray-300 pt-2 mb-2">
+                    ${sale.products.map(item => `
+                        <div class="flex justify-between text-sm mb-1">
+                            <span>${item.name} x${item.quantity}</span>
+                            <span>${Utilities.formatCurrency(item.total)}</span>
+                        </div>
+                    `).join('')}
+                </div>
+
+                <div class="border-t border-gray-300 pt-2 space-y-1 text-sm">
+                    <div class="flex justify-between">
+                        <span>Subtotal:</span>
+                        <span>${Utilities.formatCurrency(sale.subtotal)}</span>
+                    </div>
+                    ${sale.discount > 0 ? `
+                    <div class="flex justify-between">
+                        <span>Descuento (${sale.discount}%):</span>
+                        <span>-${Utilities.formatCurrency(sale.discount_amount)}</span>
+                    </div>
+                    ` : ''}
+                    <div class="flex justify-between font-bold">
+                        <span>TOTAL:</span>
+                        <span>${Utilities.formatCurrency(sale.total)}</span>
+                    </div>
+                    ${sale.payment_method === 'efectivo' ? `
+                    <div class="flex justify-between">
+                        <span>Efectivo:</span>
+                        <span>${Utilities.formatCurrency(sale.cash_received)}</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span>Cambio:</span>
+                        <span>${Utilities.formatCurrency(sale.change)}</span>
+                    </div>
+                    ` : ''}
+                </div>
+
+                <div class="text-center mt-4 pt-2 border-t border-gray-300">
+                    <p class="text-xs text-gray-600">¡Gracias por su compra!</p>
+                </div>
+            `;
+
+            document.getElementById('receiptModal').classList.remove('hidden');
+        }
+
+        function printReceipt() {
+            const receiptContent = document.getElementById('receiptContent').innerHTML;
+            const printWindow = window.open('', '_blank');
+            printWindow.document.write(`
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <title>Recibo de Venta</title>
+                    <style>
+                        body { font-family: Arial, sans-serif; font-size: 12px; padding: 20px; }
+                        .header { text-align: center; margin-bottom: 15px; }
+                        .products { margin: 10px 0; }
+                        .total { font-weight: bold; font-size: 14px; }
+                        .footer { text-align: center; margin-top: 15px; font-size: 10px; }
+                    </style>
+                </head>
+                <body>
+                    ${receiptContent}
+                </body>
+                </html>
+            `);
+            printWindow.document.close();
+            printWindow.print();
+        }
+
+        // Sales History
+        function loadSalesHistory() {
+            const sales = LocalStorageDriver.getAll('sales')
+                .sort((a, b) => new Date(b.date) - new Date(a.date))
+                .slice(0, 10); // Últimas 10 ventas
+
+            const container = document.getElementById('salesHistoryTable');
+            const emptyState = document.getElementById('emptySales');
+
+            if (sales.length === 0) {
+                container.innerHTML = '';
+                emptyState.classList.remove('hidden');
+                return;
+            }
+
+            emptyState.classList.add('hidden');
+            container.innerHTML = '';
+
+            sales.forEach(sale => {
+                const row = document.createElement('tr');
+                row.className = 'hover:bg-gray-50';
+                row.innerHTML = `
+                    <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
+                        ${new Date(sale.date).toLocaleDateString('es-CO')}
+                    </td>
+                    <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
+                        ${sale.customer_name}
+                    </td>
+                    <td class="px-4 py-4 text-sm text-gray-900">
+                        ${sale.products.length} productos
+                    </td>
+                    <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
+                        ${Utilities.formatCurrency(sale.total)}
+                    </td>
+                    <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
+                        <span class="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs">${sale.payment_method}</span>
+                    </td>
+                    <td class="px-4 py-4 whitespace-nowrap text-sm font-medium">
+                        <button onclick="showSaleDetails('${sale.id}')" class="text-blue-600 hover:text-blue-900">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </td>
+                `;
+                container.appendChild(row);
+            });
+        }
+
+        function showSaleDetails(saleId) {
+            const sale = LocalStorageDriver.getAll('sales').find(s => s.id === saleId);
+            if (!sale) return;
+
+            document.getElementById('saleDetailsContent').innerHTML = `
+                <div class="space-y-6">
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="text-center p-3 bg-blue-50 rounded-lg">
+                            <div class="text-2xl font-bold text-blue-600">${sale.products.length}</div>
+                            <div class="text-sm text-gray-600">Productos</div>
+                        </div>
+                        <div class="text-center p-3 bg-green-50 rounded-lg">
+                            <div class="text-2xl font-bold text-green-600">${Utilities.formatCurrency(sale.total)}</div>
+                            <div class="text-sm text-gray-600">Total</div>
+                        </div>
+                    </div>
+
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Información de la Venta</label>
+                            <div class="mt-2 space-y-2 text-sm">
+                                <p><strong>Cliente:</strong> ${sale.customer_name}</p>
+                                <p><strong>Fecha:</strong> ${new Date(sale.date).toLocaleString('es-CO')}</p>
+                                <p><strong>Método de pago:</strong> ${sale.payment_method.toUpperCase()}</p>
+                                <p><strong>Estado:</strong> <span class="px-2 py-1 bg-green-100 text-green-800 rounded text-xs">COMPLETADA</span></p>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Productos Vendidos</label>
+                            <div class="space-y-2">
+                                ${sale.products.map(item => `
+                                    <div class="flex justify-between items-center p-2 bg-gray-50 rounded">
+                                        <div>
+                                            <span class="font-medium">${item.name}</span>
+                                            <p class="text-sm text-gray-600">${Utilities.formatCurrency(item.price)} x ${item.quantity}</p>
+                                        </div>
+                                        <span class="font-bold">${Utilities.formatCurrency(item.total)}</span>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+
+                        <div class="border-t border-gray-200 pt-4">
+                            <div class="space-y-2 text-sm">
+                                <div class="flex justify-between">
+                                    <span>Subtotal:</span>
+                                    <span>${Utilities.formatCurrency(sale.subtotal)}</span>
+                                </div>
+                                ${sale.discount > 0 ? `
+                                <div class="flex justify-between">
+                                    <span>Descuento (${sale.discount}%):</span>
+                                    <span>-${Utilities.formatCurrency(sale.discount_amount)}</span>
+                                </div>
+                                ` : ''}
+                                <div class="flex justify-between font-bold text-lg">
+                                    <span>TOTAL:</span>
+                                    <span>${Utilities.formatCurrency(sale.total)}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            document.getElementById('saleDetailsModal').classList.remove('hidden');
+        }
+
+        // Data Loading
+        function loadSalesData() {
+            const user = AuthManager.getCurrentUser();
+            if (!user) {
+                window.location.href = 'index.html';
+                return;
+            }
+
+            document.getElementById('userName').textContent = `${user.name} ${user.last_name || ''}`;
+            loadStats();
+            loadCustomers();
+            loadProducts();
+            loadSalesHistory();
+        }
+
+        function loadStats() {
+            const sales = LocalStorageDriver.getAll('sales');
+            const today = new Date().toDateString();
+            
+            // Ventas de hoy
+            const todaySales = sales.filter(s => 
+                new Date(s.date).toDateString() === today
+            );
+            document.getElementById('todaySales').textContent = todaySales.length;
+
+            // Ingresos de hoy
+            const todayRevenue = todaySales.reduce((sum, sale) => sum + sale.total, 0);
+            document.getElementById('todayRevenue').textContent = Utilities.formatCurrency(todayRevenue);
+
+            // Ingresos del mes
+            const currentMonth = new Date().getMonth();
+            const currentYear = new Date().getFullYear();
+            const monthSales = sales.filter(s => {
+                const saleDate = new Date(s.date);
+                return saleDate.getMonth() === currentMonth && saleDate.getFullYear() === currentYear;
+            });
+            const monthRevenue = monthSales.reduce((sum, sale) => sum + sale.total, 0);
+            document.getElementById('monthRevenue').textContent = Utilities.formatCurrency(monthRevenue);
+
+            // Ticket promedio
+            const avgSale = sales.length > 0 ? Math.round(monthRevenue / sales.length) : 0;
+            document.getElementById('avgSale').textContent = Utilities.formatCurrency(avgSale);
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            loadSalesData();
+            
+            // Event listener para método de pago
+            document.querySelectorAll('input[name="paymentMethod"]').forEach(radio => {
+                radio.addEventListener('change', function() {
+                    updateCart();
+                });
+            });
+        });
+    </script>
+</body>
+</html>
