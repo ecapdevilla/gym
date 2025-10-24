@@ -3,422 +3,186 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard - PowerGym</title>
+    <title>PowerGym - Inicio</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="shared.js"></script>
 </head>
-<body class="bg-gray-100">
-    <!-- Navbar -->
-    <nav class="bg-blue-600 text-white p-4 shadow-lg">
+<body class="bg-gray-900 text-white">
+    <!-- Header -->
+    <nav class="bg-blue-600 p-4">
         <div class="container mx-auto flex justify-between items-center">
-            <div class="flex items-center space-x-4">
-                <h1 class="text-xl font-bold">🏋️ PowerGym</h1>
-                <span id="userRole" class="bg-blue-500 px-2 py-1 rounded text-sm"></span>
-            </div>
-            <div class="flex items-center space-x-4">
-                <span id="userName" class="hidden md:block"></span>
-                <button onclick="logout()" class="bg-red-500 hover:bg-red-600 px-4 py-2 rounded-lg flex items-center">
-                    <i class="fas fa-sign-out-alt mr-2"></i>
-                    <span class="hidden md:inline">Salir</span>
-                </button>
-            </div>
+            <h1 class="text-2xl font-bold">🏋️ PowerGym</h1>
         </div>
     </nav>
 
-    <!-- Mobile Menu Button -->
-    <div class="bg-blue-500 text-white p-2 md:hidden">
-        <button id="mobileMenuBtn" class="w-full text-left">
-            <i class="fas fa-bars mr-2"></i> Menú
-        </button>
-    </div>
-
-    <!-- Main Content -->
-    <div class="container mx-auto p-4 flex">
-        <!-- Sidebar -->
-        <div id="sidebar" class="hidden md:block w-64 bg-white rounded-lg shadow-lg p-4 mr-4">
-            <nav class="space-y-2">
-                <a href="dashboard.html" class="block bg-blue-100 text-blue-700 p-3 rounded-lg font-bold">
-                    <i class="fas fa-chart-bar mr-2"></i>Dashboard
-                </a>
-                
-                <a href="miembros.html" class="block hover:bg-gray-100 p-3 rounded-lg">
-                    <i class="fas fa-users mr-2"></i>Miembros
-                </a>
-                
-                <a href="planes.html" class="block hover:bg-gray-100 p-3 rounded-lg">
-                    <i class="fas fa-credit-card mr-2"></i>Planes
-                </a>
-                
-                <a href="asistencia.html" class="block hover:bg-gray-100 p-3 rounded-lg">
-                    <i class="fas fa-clipboard-check mr-2"></i>Asistencia
-                </a>
-                
-                <a href="rutinas.html" class="block hover:bg-gray-100 p-3 rounded-lg">
-                    <i class="fas fa-dumbbell mr-2"></i>Rutinas
-                </a>
-                
-                <a href="coaches.html" class="block hover:bg-gray-100 p-3 rounded-lg">
-                    <i class="fas fa-user-tie mr-2"></i>Coaches
-                </a>
-                
-                <a href="inventario.html" class="block hover:bg-gray-100 p-3 rounded-lg">
-                    <i class="fas fa-boxes mr-2"></i>Inventario
-                </a>
-                
-                <a href="ventas.html" class="block hover:bg-gray-100 p-3 rounded-lg">
-                    <i class="fas fa-cash-register mr-2"></i>Ventas
-                </a>
-                
-                <a href="finanzas.html" class="block hover:bg-gray-100 p-3 rounded-lg">
-                    <i class="fas fa-chart-line mr-2"></i>Finanzas
-                </a>
-                
-                <a href="recordatorios.html" class="block hover:bg-gray-100 p-3 rounded-lg">
-                    <i class="fas fa-bell mr-2"></i>Recordatorios
-                </a>
-            </nav>
-        </div>
-
-        <!-- Dashboard Content -->
-        <div class="flex-1">
-            <!-- Welcome Section -->
-            <div class="bg-white rounded-lg shadow-lg p-6 mb-6">
-                <h2 class="text-2xl font-bold text-gray-800" id="welcomeMessage">Bienvenido</h2>
-                <p class="text-gray-600" id="dashboardDate"></p>
+    <!-- Hero Section -->
+    <div class="container mx-auto px-4 py-16 text-center">
+        <h2 class="text-4xl font-bold mb-4">Transforma Tu Cuerpo, Transforma Tu Vida</h2>
+        <p class="text-xl mb-8">El gimnasio más completo de la ciudad</p>
+        
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+            <div class="bg-gray-800 p-6 rounded-lg">
+                <i class="fas fa-dumbbell text-4xl text-blue-400 mb-4"></i>
+                <h3 class="text-xl font-bold mb-2">Equipo Premium</h3>
+                <p>La mejor tecnología en equipos de ejercicio</p>
             </div>
-
-            <!-- Stats Grid -->
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-                <!-- Total Members -->
-                <div class="bg-white rounded-lg shadow-lg p-6">
-                    <div class="flex items-center justify-between">
-                        <div>
-                            <p class="text-gray-500 text-sm">Miembros Activos</p>
-                            <h3 class="text-2xl font-bold text-gray-800" id="totalMembers">0</h3>
-                        </div>
-                        <div class="bg-blue-100 p-3 rounded-full">
-                            <i class="fas fa-users text-blue-500 text-xl"></i>
-                        </div>
-                    </div>
-                    <p class="text-green-500 text-sm mt-2" id="membersGrowth">+0 este mes</p>
-                </div>
-
-                <!-- Today's Attendance -->
-                <div class="bg-white rounded-lg shadow-lg p-6">
-                    <div class="flex items-center justify-between">
-                        <div>
-                            <p class="text-gray-500 text-sm">Asistencia Hoy</p>
-                            <h3 class="text-2xl font-bold text-gray-800" id="todayAttendance">0</h3>
-                        </div>
-                        <div class="bg-green-100 p-3 rounded-full">
-                            <i class="fas fa-clipboard-check text-green-500 text-xl"></i>
-                        </div>
-                    </div>
-                    <p class="text-gray-500 text-sm mt-2" id="attendanceTime">Actualizado ahora</p>
-                </div>
-
-                <!-- Monthly Revenue -->
-                <div class="bg-white rounded-lg shadow-lg p-6">
-                    <div class="flex items-center justify-between">
-                        <div>
-                            <p class="text-gray-500 text-sm">Ingresos Mes</p>
-                            <h3 class="text-2xl font-bold text-gray-800" id="monthlyRevenue">$0</h3>
-                        </div>
-                        <div class="bg-yellow-100 p-3 rounded-full">
-                            <i class="fas fa-dollar-sign text-yellow-500 text-xl"></i>
-                        </div>
-                    </div>
-                    <p class="text-green-500 text-sm mt-2" id="revenueGrowth">+0% vs mes anterior</p>
-                </div>
-
-                <!-- Low Stock Alert -->
-                <div class="bg-white rounded-lg shadow-lg p-6">
-                    <div class="flex items-center justify-between">
-                        <div>
-                            <p class="text-gray-500 text-sm">Stock Bajo</p>
-                            <h3 class="text-2xl font-bold text-gray-800" id="lowStockCount">0</h3>
-                        </div>
-                        <div class="bg-red-100 p-3 rounded-full">
-                            <i class="fas fa-exclamation-triangle text-red-500 text-xl"></i>
-                        </div>
-                    </div>
-                    <p class="text-red-500 text-sm mt-2" id="stockAlert">Productos por reordenar</p>
-                </div>
+            <div class="bg-gray-800 p-6 rounded-lg">
+                <i class="fas fa-users text-4xl text-green-400 mb-4"></i>
+                <h3 class="text-xl font-bold mb-2">Coaches Expertos</h3>
+                <p>Entrenadores certificados para guiarte</p>
             </div>
-
-            <!-- Charts and Recent Activity -->
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <!-- Recent Members -->
-                <div class="bg-white rounded-lg shadow-lg p-6">
-                    <h3 class="text-lg font-bold mb-4 flex items-center">
-                        <i class="fas fa-user-plus mr-2 text-blue-500"></i>
-                        Miembros Recientes
-                    </h3>
-                    <div id="recentMembers" class="space-y-3">
-                        <!-- Los miembros recientes se cargarán aquí -->
-                    </div>
-                </div>
-
-                <!-- Quick Actions -->
-                <div class="bg-white rounded-lg shadow-lg p-6">
-                    <h3 class="text-lg font-bold mb-4 flex items-center">
-                        <i class="fas fa-bolt mr-2 text-yellow-500"></i>
-                        Acciones Rápidas
-                    </h3>
-                    <div class="grid grid-cols-2 gap-4">
-                        <button onclick="location.href='asistencia.html'" class="bg-blue-500 hover:bg-blue-600 text-white p-4 rounded-lg text-center">
-                            <i class="fas fa-clipboard-check text-2xl mb-2"></i>
-                            <p>Registrar Asistencia</p>
-                        </button>
-                        
-                        <button onclick="location.href='ventas.html'" class="bg-green-500 hover:bg-green-600 text-white p-4 rounded-lg text-center">
-                            <i class="fas fa-cash-register text-2xl mb-2"></i>
-                            <p>Nueva Venta</p>
-                        </button>
-                        
-                        <button onclick="location.href='miembros.html'" class="bg-purple-500 hover:bg-purple-600 text-white p-4 rounded-lg text-center">
-                            <i class="fas fa-user-plus text-2xl mb-2"></i>
-                            <p>Agregar Miembro</p>
-                        </button>
-                        
-                        <button onclick="location.href='recordatorios.html'" class="bg-orange-500 hover:bg-orange-600 text-white p-4 rounded-lg text-center">
-                            <i class="fas fa-bell text-2xl mb-2"></i>
-                            <p>Enviar Recordatorios</p>
-                        </button>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Pending Tasks -->
-            <div class="bg-white rounded-lg shadow-lg p-6 mt-6">
-                <h3 class="text-lg font-bold mb-4 flex items-center">
-                    <i class="fas fa-tasks mr-2 text-green-500"></i>
-                    Tareas Pendientes
-                </h3>
-                <div id="pendingTasks" class="space-y-2">
-                    <!-- Las tareas pendientes se cargarán aquí -->
-                </div>
+            <div class="bg-gray-800 p-6 rounded-lg">
+                <i class="fas fa-clock text-4xl text-yellow-400 mb-4"></i>
+                <h3 class="text-xl font-bold mb-2">Horario Extendido</h3>
+                <p>Abierto Lunes a viernes: de 5:00 AM a 12:00 PM </p>
+				<p>3:00 pm a 10:00 pm</p>
+					<p>Sabados de 5:00 am a 2:00 pm </p>
+					<p>Festivos de 5:00 am a 2:00 pm </p>
+					<p>Domingos descanso</p>
             </div>
         </div>
-    </div>
 
-    <!-- Mobile Menu Modal -->
-    <div id="mobileMenu" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden md:hidden">
-        <div class="bg-white w-64 h-full p-4">
-            <div class="flex justify-between items-center mb-6">
-                <h3 class="font-bold">Menú</h3>
-                <button onclick="closeMobileMenu()" class="text-gray-500">
-                    <i class="fas fa-times"></i>
+        <!-- Login Form -->
+        <div class="max-w-md mx-auto bg-gray-800 p-8 rounded-lg">
+            <h3 class="text-2xl font-bold mb-6">Iniciar Sesión</h3>
+            
+            <form id="loginForm" class="space-y-4">
+                <div>
+                    <label class="block text-left mb-2">Email o Teléfono</label>
+                    <input type="text" id="email" class="w-full p-3 rounded bg-gray-700 text-white" required>
+                </div>
+                
+                <div>
+                    <label class="block text-left mb-2">Contraseña</label>
+                    <input type="password" id="password" class="w-full p-3 rounded bg-gray-700 text-white" required>
+                </div>
+
+                <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 p-3 rounded font-bold">
+                    Ingresar
+                </button>
+            </form>
+
+            <div class="mt-6">
+                <p class="mb-4">¿No tienes cuenta?</p>
+                <button onclick="showRegister()" class="w-full bg-green-600 hover:bg-green-700 p-3 rounded font-bold">
+                    Registrarse como Miembro
                 </button>
             </div>
-            <nav class="space-y-2">
-                <a href="dashboard.html" class="block bg-blue-100 text-blue-700 p-3 rounded-lg font-bold" onclick="closeMobileMenu()">
-                    <i class="fas fa-chart-bar mr-2"></i>Dashboard
-                </a>
-                <a href="miembros.html" class="block hover:bg-gray-100 p-3 rounded-lg" onclick="closeMobileMenu()">
-                    <i class="fas fa-users mr-2"></i>Miembros
-                </a>
-                <a href="planes.html" class="block hover:bg-gray-100 p-3 rounded-lg" onclick="closeMobileMenu()">
-                    <i class="fas fa-credit-card mr-2"></i>Planes
-                </a>
-                <a href="asistencia.html" class="block hover:bg-gray-100 p-3 rounded-lg" onclick="closeMobileMenu()">
-                    <i class="fas fa-clipboard-check mr-2"></i>Asistencia
-                </a>
-                <a href="rutinas.html" class="block hover:bg-gray-100 p-3 rounded-lg" onclick="closeMobileMenu()">
-                    <i class="fas fa-dumbbell mr-2"></i>Rutinas
-                </a>
-                <a href="coaches.html" class="block hover:bg-gray-100 p-3 rounded-lg" onclick="closeMobileMenu()">
-                    <i class="fas fa-user-tie mr-2"></i>Coaches
-                </a>
-                <a href="inventario.html" class="block hover:bg-gray-100 p-3 rounded-lg" onclick="closeMobileMenu()">
-                    <i class="fas fa-boxes mr-2"></i>Inventario
-                </a>
-                <a href="ventas.html" class="block hover:bg-gray-100 p-3 rounded-lg" onclick="closeMobileMenu()">
-                    <i class="fas fa-cash-register mr-2"></i>Ventas
-                </a>
-                <a href="finanzas.html" class="block hover:bg-gray-100 p-3 rounded-lg" onclick="closeMobileMenu()">
-                    <i class="fas fa-chart-line mr-2"></i>Finanzas
-                </a>
-                <a href="recordatorios.html" class="block hover:bg-gray-100 p-3 rounded-lg" onclick="closeMobileMenu()">
-                    <i class="fas fa-bell mr-2"></i>Recordatorios
-                </a>
-            </nav>
+        </div>
+
+        <!-- Register Form (hidden by default) -->
+        <div id="registerForm" class="max-w-md mx-auto bg-gray-800 p-8 rounded-lg mt-6 hidden">
+            <h3 class="text-2xl font-bold mb-6">Registro de Miembro</h3>
+            
+            <form id="registerMemberForm" class="space-y-4">
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-left mb-2">Nombre</label>
+                        <input type="text" id="regName" class="w-full p-3 rounded bg-gray-700 text-white" required>
+                    </div>
+                    <div>
+                        <label class="block text-left mb-2">Apellido</label>
+                        <input type="text" id="regLastName" class="w-full p-3 rounded bg-gray-700 text-white" required>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-left mb-2">Teléfono</label>
+                    <input type="tel" id="regPhone" class="w-full p-3 rounded bg-gray-700 text-white" required>
+                </div>
+
+                <div>
+                    <label class="block text-left mb-2">Email</label>
+                    <input type="email" id="regEmail" class="w-full p-3 rounded bg-gray-700 text-white" required>
+                </div>
+
+                <div>
+                    <label class="block text-left mb-2">Contraseña</label>
+                    <input type="password" id="regPassword" class="w-full p-3 rounded bg-gray-700 text-white" required>
+                </div>
+
+                <div class="flex space-x-4">
+                    <button type="submit" class="flex-1 bg-green-600 hover:bg-green-700 p-3 rounded font-bold">
+                        Registrarse
+                    </button>
+                    <button type="button" onclick="hideRegister()" class="flex-1 bg-gray-600 hover:bg-gray-700 p-3 rounded font-bold">
+                        Cancelar
+                    </button>
+                </div>
+            </form>
         </div>
     </div>
 
     <script>
-        // Navigation
-        document.getElementById('mobileMenuBtn').addEventListener('click', function() {
-            document.getElementById('mobileMenu').classList.remove('hidden');
+        function showRegister() {
+            document.getElementById('registerForm').classList.remove('hidden');
+        }
+
+        function hideRegister() {
+            document.getElementById('registerForm').classList.add('hidden');
+        }
+
+        document.getElementById('loginForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+
+            const user = AuthManager.login(email, password);
+            if (user) {
+                window.location.href = 'dashboard.html';
+            } else {
+                Utilities.showToast('Credenciales incorrectas', 'error');
+            }
         });
 
-        function closeMobileMenu() {
-            document.getElementById('mobileMenu').classList.add('hidden');
-        }
-
-        function logout() {
-            AuthManager.logout();
-            window.location.href = 'index.html';
-        }
-
-        // Dashboard Data
-        function loadDashboardData() {
-            const user = AuthManager.getCurrentUser();
-            if (!user) {
-                window.location.href = 'index.html';
-                return;
-            }
-
-            // User Info
-            document.getElementById('userName').textContent = `${user.name} ${user.last_name || ''}`;
-            document.getElementById('userRole').textContent = user.role.toUpperCase();
-            document.getElementById('welcomeMessage').textContent = `Bienvenido, ${user.name}`;
-            document.getElementById('dashboardDate').textContent = `Hoy es ${new Date().toLocaleDateString('es-CO', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}`;
-
-            // Load Stats
-            loadStats();
-            loadRecentMembers();
-            loadPendingTasks();
-        }
-
-        function loadStats() {
-            const members = LocalStorageDriver.getAll('members');
-            const attendance = LocalStorageDriver.getAll('attendance');
-            const sales = LocalStorageDriver.getAll('sales');
-            const inventory = LocalStorageDriver.getAll('inventory');
-
-            // Total Members
-            const activeMembers = members.filter(m => m.status === 'active');
-            document.getElementById('totalMembers').textContent = activeMembers.length;
-
-            // Today's Attendance
-            const today = new Date().toDateString();
-            const todayAttendance = attendance.filter(a => {
-                const checkInDate = new Date(a.check_in).toDateString();
-                return checkInDate === today;
-            });
-            document.getElementById('todayAttendance').textContent = todayAttendance.length;
-
-            // Monthly Revenue
-            const currentMonth = new Date().getMonth();
-            const currentYear = new Date().getFullYear();
-            const monthlySales = sales.filter(s => {
-                const saleDate = new Date(s.date);
-                return saleDate.getMonth() === currentMonth && saleDate.getFullYear() === currentYear;
-            });
-            const monthlyRevenue = monthlySales.reduce((total, sale) => total + (sale.total || 0), 0);
-            document.getElementById('monthlyRevenue').textContent = Utilities.formatCurrency(monthlyRevenue);
-
-            // Low Stock
-            const lowStockItems = inventory.filter(item => item.stock <= (item.min_stock || 5));
-            document.getElementById('lowStockCount').textContent = lowStockItems.length;
-        }
-
-        function loadRecentMembers() {
-            const members = LocalStorageDriver.getAll('members')
-                .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
-                .slice(0, 5);
-
-            const container = document.getElementById('recentMembers');
-            container.innerHTML = '';
-
-            if (members.length === 0) {
-                container.innerHTML = '<p class="text-gray-500 text-center">No hay miembros registrados</p>';
-                return;
-            }
-
-            members.forEach(member => {
-                const memberElement = document.createElement('div');
-                memberElement.className = 'flex items-center justify-between p-2 hover:bg-gray-50 rounded';
-                memberElement.innerHTML = `
-                    <div class="flex items-center">
-                        <div class="bg-blue-100 text-blue-600 w-8 h-8 rounded-full flex items-center justify-center mr-3">
-                            <i class="fas fa-user text-sm"></i>
-                        </div>
-                        <div>
-                            <p class="font-medium">${member.name} ${member.last_name || ''}</p>
-                            <p class="text-sm text-gray-500">${Utilities.formatDate(member.created_at)}</p>
-                        </div>
-                    </div>
-                    <span class="bg-green-100 text-green-800 text-xs px-2 py-1 rounded">${member.plan_id || 'Sin plan'}</span>
-                `;
-                container.appendChild(memberElement);
-            });
-        }
-
-        function loadPendingTasks() {
-            const tasks = [
-                { type: 'inactive_members', count: getInactiveMembersCount(), icon: 'fa-user-clock', color: 'orange' },
-                { type: 'pending_payments', count: getPendingPaymentsCount(), icon: 'fa-money-bill-wave', color: 'red' },
-                { type: 'low_stock', count: getLowStockCount(), icon: 'fa-boxes', color: 'yellow' }
-            ];
-
-            const container = document.getElementById('pendingTasks');
-            container.innerHTML = '';
-
-            tasks.forEach(task => {
-                if (task.count > 0) {
-                    const taskElement = document.createElement('div');
-                    taskElement.className = 'flex items-center justify-between p-3 bg-gray-50 rounded-lg';
-                    taskElement.innerHTML = `
-                        <div class="flex items-center">
-                            <i class="fas ${task.icon} text-${task.color}-500 mr-3"></i>
-                            <span>${getTaskDescription(task.type)}</span>
-                        </div>
-                        <span class="bg-${task.color}-500 text-white px-2 py-1 rounded-full text-sm">${task.count}</span>
-                    `;
-                    container.appendChild(taskElement);
-                }
-            });
-
-            if (container.children.length === 0) {
-                container.innerHTML = '<p class="text-gray-500 text-center">¡No hay tareas pendientes! Todo está al día.</p>';
-            }
-        }
-
-        function getInactiveMembersCount() {
-            // Miembros que no han asistido en 15 días
-            const members = LocalStorageDriver.getAll('members');
-            const attendance = LocalStorageDriver.getAll('attendance');
-            const fifteenDaysAgo = new Date();
-            fifteenDaysAgo.setDate(fifteenDaysAgo.getDate() - 15);
-
-            return members.filter(member => {
-                const lastAttendance = attendance
-                    .filter(a => a.member_id === member.id)
-                    .sort((a, b) => new Date(b.check_in) - new Date(a.check_in))[0];
-                
-                return !lastAttendance || new Date(lastAttendance.check_in) < fifteenDaysAgo;
-            }).length;
-        }
-
-        function getPendingPaymentsCount() {
-            // Lógica simplificada para pagos pendientes
-            const members = LocalStorageDriver.getAll('members');
-            return members.filter(m => m.status === 'active').length; // Ejemplo simplificado
-        }
-
-        function getLowStockCount() {
-            const inventory = LocalStorageDriver.getAll('inventory');
-            return inventory.filter(item => item.stock <= (item.min_stock || 5)).length;
-        }
-
-        function getTaskDescription(type) {
-            const descriptions = {
-                'inactive_members': 'Miembros inactivos (15+ días)',
-                'pending_payments': 'Pagos pendientes',
-                'low_stock': 'Productos con stock bajo'
+        document.getElementById('registerMemberForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const userData = {
+                name: document.getElementById('regName').value,
+                last_name: document.getElementById('regLastName').value,
+                phone: document.getElementById('regPhone').value,
+                email: document.getElementById('regEmail').value,
+                password: document.getElementById('regPassword').value
             };
-            return descriptions[type] || type;
-        }
 
-        // Initialize dashboard
+            if (!Utilities.validateEmail(userData.email)) {
+                Utilities.showToast('Email inválido', 'error');
+                return;
+            }
+
+            if (!Utilities.validatePhone(userData.phone)) {
+                Utilities.showToast('Teléfono inválido', 'error');
+                return;
+            }
+
+            try {
+                AuthManager.register(userData);
+                Utilities.showToast('Registro exitoso. Ahora puedes iniciar sesión.');
+                hideRegister();
+                document.getElementById('registerMemberForm').reset();
+            } catch (error) {
+                Utilities.showToast('Error en el registro', 'error');
+            }
+        });
+
+        // Inicializar datos de ejemplo si es primera vez
         document.addEventListener('DOMContentLoaded', function() {
-            loadDashboardData();
-            
-            // Refresh data every 30 seconds
-            setInterval(loadDashboardData, 30000);
+            const plans = LocalStorageDriver.getAll('plans');
+            if (plans.length === 0) {
+                // Crear planes por defecto
+                const defaultPlans = [
+                    { name: 'Plan Diario', price: 5000, duration_days: 1, features: ['Acceso por un día', 'Área de pesas', 'Área cardio'] },
+                    { name: 'Plan Semanal', price: 25000, duration_days: 7, features: ['Acceso 7 días', 'Todas las áreas', 'Lockers'] },
+                    { name: 'Plan Quincenal', price: 45000, duration_days: 15, features: ['Acceso 15 días', 'Todas las áreas', 'Lockers', '1 clase grupal'] },
+                    { name: 'Plan Mensual Básico', price: 80000, duration_days: 30, features: ['Acceso 30 días', 'Todas las áreas', 'Lockers', '2 clases grupales'] },
+                    { name: 'Plan Premium', price: 120000, duration_days: 30, features: ['Acceso ilimitado', 'Todas las áreas', 'Lockers', 'Clases grupales ilimitadas', 'Asesoría nutricional'] }
+                ];
+                
+                defaultPlans.forEach(plan => {
+                    LocalStorageDriver.create('plans', plan);
+                });
+            }
         });
     </script>
 </body>
